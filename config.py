@@ -25,9 +25,15 @@ class DBSettings(BaseSettings):
                 f"{self.DB_HOST}:{self.DB_PORT}/{self.DB_NAME}")
 
 
+class RedisSettings(BaseSettings):
+    host: str
+    port: int
+
+
 @dataclass
 class Config:
     db: DBSettings
+    redis: RedisSettings
 
 
 def load_config() -> Config:
@@ -47,6 +53,10 @@ def load_config() -> Config:
             DB_PASSWORD=env.str('DB_PASSWORD'),
             DB_NAME=env.str('DB_NAME'),
             DB_PORT=env.int('DB_PORT'),
+        ),
+        redis=RedisSettings(
+            host=env.str('REDIS_HOST'),
+            port=env.int('REDIS_PORT'),
         )
     )
 

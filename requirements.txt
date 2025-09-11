@@ -1,0 +1,7 @@
+booktype
+SQLAlchemy~=2.0.43
+fastapi~=0.116.1
+pydantic~=2.11.7
+environs~=14.3.0
+pydantic-settings~=2.10.1
+alembic~=1.16.5

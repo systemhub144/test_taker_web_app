@@ -123,11 +123,11 @@ test = run(add_full_test(test_data, async_session_maker=async_session_maker))
 # user_test_data = {
 #     'test_id': test,
 #     'username': 'sardor',
-#     'user_id': 1,
+#     'user_id': 1087684287,
 #     'city': 'Tashkent',
 #     'started_at': datetime.datetime.now(),
 #     'completed_at': datetime.datetime.now(),
 #     'answers':['A', 'B', 'C', 'D', 'E', 'F', 'E', 'A', 'B', 'C', 'HELLO', 'Bee', 'Car', 'Door', 'Earth'],
 # }
 #
-# run(pass_test(user_test_data))
+# run(pass_test(user_test_data, async_session_maker=async_session_maker))
