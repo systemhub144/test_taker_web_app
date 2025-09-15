@@ -1,11 +1,10 @@
-import datetime
 import json
 
 from redis import Redis
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from models.dao.dao import TestDAO
-from models.database import connection
+from app.models.dao.dao import TestDAO
+from app.models.database import connection
 
 
 @connection

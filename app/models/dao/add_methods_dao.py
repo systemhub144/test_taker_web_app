@@ -1,5 +1,5 @@
-from models.dao.dao import TestDAO, UserDAO
-from models.database import connection
+from app.models.dao.dao import TestDAO, UserDAO
+from app.models.database import connection
 
 from sqlalchemy.ext.asyncio import AsyncSession
 

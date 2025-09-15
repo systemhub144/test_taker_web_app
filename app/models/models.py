@@ -3,7 +3,7 @@ from datetime import datetime
 from sqlalchemy import String, ForeignKey
 from sqlalchemy.orm import Mapped, mapped_column
 
-from models.database import Base, CloseAnswerEnum, AnswerTypeEnum
+from app.models.database import Base, CloseAnswerEnum, AnswerTypeEnum
 
 
 class Test(Base):

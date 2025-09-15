@@ -1,14 +1,9 @@
 import enum
 
 from sqlalchemy.orm import DeclarativeBase, declared_attr, Mapped, mapped_column
-from sqlalchemy.ext.asyncio import AsyncAttrs, create_async_engine, async_sessionmaker
+from sqlalchemy.ext.asyncio import AsyncAttrs
 from datetime import datetime
 from sqlalchemy import Integer, func
-
-from config import load_config
-
-CONFIG = load_config()
-DATABASE_URL = CONFIG.db.get_db_url()
 
 
 class Base(AsyncAttrs, DeclarativeBase):

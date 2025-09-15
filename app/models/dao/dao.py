@@ -2,10 +2,10 @@ import datetime
 
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import select
-from sqlalchemy.orm import load_only
 
-from models.dao.base import BaseDAO
-from models.models import Test, User, TestAttempt, Answer, UserAnswer
+from app.models.dao.base import BaseDAO
+from app.models.models import Test, User, TestAttempt, Answer, UserAnswer
+from app.pydantic_models import SubmitTest
 
 
 class TestDAO(BaseDAO):
@@ -50,15 +50,15 @@ class UserDAO(BaseDAO):
     model = User
 
     @classmethod
-    async def pass_test(cls, session: AsyncSession, user_test_data: dict) -> bool:
-        stmt = select(Answer).where(Answer.test_id == user_test_data['test_id'])
+    async def pass_test(cls, session: AsyncSession, user_test_data: SubmitTest) -> bool:
+        stmt = select(Answer).where(Answer.test_id == user_test_data.test_id)
         answers = (await session.execute(stmt)).scalars().all()
 
         user = cls.model(
-            username=user_test_data['username'],
-            city=user_test_data['city'],
-            user_id=user_test_data['user_id'],
-            lastname=user_test_data['lastname'],
+            username=user_test_data.username,
+            city=user_test_data.city,
+            user_id=user_test_data.user_id,
+            lastname=user_test_data.lastname,
         )
 
         session.add(user)
@@ -71,7 +71,7 @@ class UserDAO(BaseDAO):
         }
 
         for answer in answers:
-            user_answer = user_test_data['answers'][answer.question_number - 1]
+            user_answer = user_test_data.answers[answer.question_number - 1]
             if answer.correct_answer == user_answer:
                 test_results['correct_answers'] += 1
                 test_results['score'] += answer.score
@@ -79,8 +79,8 @@ class UserDAO(BaseDAO):
                 test_results['wrong_answers'] += 1
 
         test_attempt = TestAttempt(
-            test_id=user_test_data['test_id'],
-            tg_user_id=user_test_data['user_id'],
+            test_id=user_test_data.test_id,
+            tg_user_id=user_test_data.user_id,
             user_id=user.id,
             score=test_results['score'],
             correct_answers=test_results['correct_answers'],
@@ -92,14 +92,14 @@ class UserDAO(BaseDAO):
         await session.flush()
 
         for answer in answers:
-            user_answer_data = user_test_data['answers'][answer.question_number - 1]
+            user_answer_data = user_test_data.answers[answer.question_number - 1]
 
             user_answer = UserAnswer(
                 attempt_id=test_attempt.id,
                 answer_id=answer.id,
                 user_answer=user_answer_data,
                 is_correct=(user_answer_data == answer.correct_answer),
-                test_id=user_test_data['test_id']
+                test_id=user_test_data.test_id
             )
             session.add(user_answer)
             await session.flush()
