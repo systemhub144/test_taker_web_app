@@ -3,27 +3,45 @@ import json
 from redis import Redis
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from app.models.dao.dao import TestDAO
+from app.models.dao.dao import TestDAO, TestAttemptDAO
 from app.models.database import connection
 
 
 @connection
-async def get_test_info(test_id: str, session: AsyncSession, redis: Redis) -> dict:
+async def get_test_info(test_id: str, session: AsyncSession, redis: Redis) -> dict | None:
     test_data = await redis.get(test_id)
     if test_data is None:
         test = await TestDAO().get_test_info_by_name(test_id=test_id, session=session)
-        test_new_data = {
-            "minutes": test.test_time,
-            "open_questions": test.open_questions,
-            "close_questions": test.close_questions,
-            "test_name": test.test_name,
-            "test_id": test.id,
-            "start_time": str(test.start_time),
-            "end_time": str(test.end_time),
-        }
+        if test is not None:
+            test_new_data = {
+                "minutes": test.test_time,
+                "open_questions": test.open_questions,
+                "close_questions": test.close_questions,
+                "test_name": test.test_name,
+                "test_id": test.id,
+                "start_time": str(test.start_time),
+                "end_time": str(test.end_time),
+            }
 
-        await redis.set(test_id, json.dumps(test_new_data))
+            await redis.set(test_id, json.dumps(test_new_data))
 
-        return test_new_data
+            return test_new_data
+        return None
 
     return json.loads(test_data)
+
+
+@connection
+async def get_all_results(user_id: int, session: AsyncSession):
+    test = await TestAttemptDAO.get_all_results(user_id=user_id, session=session)
+    return test
+
+@connection
+async def get_user_answers(user_attempt: int, session: AsyncSession):
+    test = await TestAttemptDAO.get_user_answers(user_attempt=user_attempt, session=session)
+    return test
+
+@connection
+async def get_all_test_attempts(user_id: int, session: AsyncSession):
+    test = await TestAttemptDAO.get_all_test_attempts(user_id=user_id, session=session)
+    return test

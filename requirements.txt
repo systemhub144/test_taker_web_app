@@ -1,3 +1,4 @@
+aiogram
 booktype
 SQLAlchemy~=2.0.43
 fastapi~=0.116.1

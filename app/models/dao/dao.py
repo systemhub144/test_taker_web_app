@@ -1,4 +1,5 @@
 import datetime
+from typing import Sequence
 
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import select
@@ -111,6 +112,38 @@ class UserDAO(BaseDAO):
 
 class TestAttemptDAO(BaseDAO):
     model = TestAttempt
+
+    @classmethod
+    async def get_all_results(cls, user_id: int, session: AsyncSession) -> dict:
+        results = {}
+
+        stmt = select(TestAttempt).where(TestAttempt.tg_user_id == user_id)
+        user_attempts = (await session.execute(stmt)).scalars().all()
+
+        for user_attempt in user_attempts:
+            stmt = select(Test).where(Test.id == user_attempt.test_id)
+            test = (await session.execute(stmt)).scalars().first()
+            results[test.test_name] = user_attempt
+
+        return results
+
+    @classmethod
+    async def get_user_answers(cls, user_attempt: int, session: AsyncSession) -> Sequence[UserAnswer]:
+        stmt = select(UserAnswer).where(UserAnswer.attempt_id == user_attempt)
+        return (await session.execute(stmt)).scalars().all()
+
+    @classmethod
+    async def get_all_test_attempts(cls, user_id: int, session: AsyncSession) -> dict:
+        result = {}
+
+        stmt = select(TestAttempt).where(TestAttempt.tg_user_id == user_id)
+        for user_attempt in (await session.execute(stmt)).scalars().all():
+            stmt = select(Test).where(Test.id == user_attempt.test_id)
+            test = (await session.execute(stmt)).scalars().first()
+
+            result[user_attempt] = test
+
+        return result
 
 
 class AnswerDAO(BaseDAO):

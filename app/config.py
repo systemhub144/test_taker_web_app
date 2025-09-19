@@ -10,7 +10,7 @@ logger = logging.getLogger(__name__)
 PATH = Path(__file__).resolve().parent.parent
 
 
-class DBSettings(BaseSettings):
+class Settings(BaseSettings):
     DB_USER: str
     DB_PASSWORD: str
     DB_HOST: str
@@ -19,17 +19,19 @@ class DBSettings(BaseSettings):
     REDIS_HOST: str
     REDIS_PORT: int
 
-    # DATABASE_SQLITE = 'sqlite+aiosqlite:///data/db.sqlite3'
-    model_config = SettingsConfigDict(
-        env_file=os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), ".env")
-    )
+    BOT_TOKEN: str
+    BASE_URL: str
+    ADMIN_ID: int
 
     def get_db_url(self):
         return (f"postgresql+asyncpg://{self.DB_USER}:{self.DB_PASSWORD}@"
                 f"{self.DB_HOST}:{self.DB_PORT}/{self.DB_NAME}")
 
+    def get_webhook_url(self) -> str:
+        return f"{self.BASE_URL}/webhook"
 
-def load_config(path: Path) -> DBSettings:
+
+def load_config(path: Path) -> Settings:
     logging.basicConfig(
         level=logging.INFO,
         format=u'%(filename)s:%(lineno)d #%(levelname)-8s [%(asctime)s] - %(name)s - %(message)s',
@@ -39,7 +41,7 @@ def load_config(path: Path) -> DBSettings:
     env = Env()
     env.read_env(path)
 
-    config = DBSettings(
+    config = Settings(
         DB_HOST=env.str('DB_HOST'),
         DB_USER=env.str('DB_USER'),
         DB_PASSWORD=env.str('DB_PASSWORD'),
@@ -47,6 +49,9 @@ def load_config(path: Path) -> DBSettings:
         DB_PORT=env.int('DB_PORT'),
         REDIS_HOST=env.str('REDIS_HOST'),
         REDIS_PORT=env.int('REDIS_PORT'),
+        BOT_TOKEN=env.str('BOT_TOKEN'),
+        BASE_URL=env.str('BASE_URL'),
+        ADMIN_ID=env.str('ADMIN_ID'),
     )
 
     config.get_db_url()
