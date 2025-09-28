@@ -51,7 +51,7 @@ class UserDAO(BaseDAO):
     model = User
 
     @classmethod
-    async def pass_test(cls, session: AsyncSession, user_test_data: SubmitTest) -> bool:
+    async def pass_test(cls, session: AsyncSession, user_test_data: SubmitTest) -> dict:
         stmt = select(Answer).where(Answer.test_id == user_test_data.test_id)
         answers = (await session.execute(stmt)).scalars().all()
 
@@ -107,7 +107,12 @@ class UserDAO(BaseDAO):
 
         await session.commit()
 
-        return True
+        test_results['username'] = user_test_data.username
+        test_results['city'] = user_test_data.city
+        test_results['user_id'] = user_test_data.user_id
+        test_results['lastname'] = user_test_data.lastname
+
+        return test_results
 
 
 class TestAttemptDAO(BaseDAO):

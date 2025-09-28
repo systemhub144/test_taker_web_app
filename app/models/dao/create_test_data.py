@@ -4,14 +4,14 @@ sys.path.append('/root/test_taker_web_app/')
 
 from sqlalchemy.ext.asyncio import create_async_engine, async_sessionmaker
 
-from app.config import load_config
+from app.config import load_config, PATH
 from app.models.dao.add_methods_dao import add_full_test
 from app.models.database import AnswerTypeEnum, CloseAnswerEnum
 
 from asyncio import run
 
-config = load_config()
-db_url = config.db.get_db_url()
+config = load_config(PATH / '.env')
+db_url = config.get_db_url()
 
 engine = create_async_engine(url=db_url)
 async_session_maker = async_sessionmaker(engine, expire_on_commit=False)

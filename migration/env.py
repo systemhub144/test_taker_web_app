@@ -7,13 +7,13 @@ from sqlalchemy.ext.asyncio import async_engine_from_config
 
 from alembic import context
 
-from app.config import load_config
+from app.config import load_config, PATH
 from app.models import Base
 
 # this is the Alembic Config object, which provides
 # access to the values within the .ini file in use.
-CONFIG = load_config()
-DATABASE_URL = CONFIG.db.get_db_url()
+CONFIG = load_config(PATH / '.env')
+DATABASE_URL = CONFIG.get_db_url()
 
 config = context.config
 config.set_main_option('sqlalchemy.url', DATABASE_URL)
