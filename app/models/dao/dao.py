@@ -6,32 +6,45 @@ from sqlalchemy import select
 
 from app.models.dao.base import BaseDAO
 from app.models.models import Test, User, TestAttempt, Answer, UserAnswer
-from app.pydantic_models import SubmitTest
+from app.models.database import AnswerTypeEnum, CloseAnswerEnum
+from app.pydantic_models import SubmitTest, CreateTest
 
 
 class TestDAO(BaseDAO):
     model = Test
 
     @classmethod
-    async def add_test_with_answers(cls, session: AsyncSession, test_data: dict) -> Test:
+    async def add_test_with_answers(cls, session: AsyncSession, test_data: CreateTest) -> Test:
         test = cls.model(
-            test_name=test_data['test_name'],
-            open_questions=test_data['open_questions'],
-            close_questions=test_data['close_questions'],
-            test_time=test_data['test_time'],
-            start_time=test_data['start_time'],
-            end_time=test_data['end_time'],
-            is_ended=test_data['is_ended'],
+            test_name=test_data.test_name,
+            open_questions=test_data.open_questions,
+            close_questions=test_data.close_questions,
+            test_time=test_data.test_time,
+            start_time=test_data.start_time,
+            end_time=test_data.end_time,
+            is_ended=test_data.is_ended,
+            user_id=test_data.user_id
         )
 
         session.add(test)
         await session.flush()
 
-        for answer_data in test_data['answers']:
+        for answer_data in test_data.answer:
+            if answer_data['question_type'] == 'close':
+                question_type = AnswerTypeEnum.CLOSE
+
+                try:
+                    answer_data['answer'] = CloseAnswerEnum(answer_data['answer'])
+                except ValueError:
+                    answer_data['answer'] = 'False'
+            else:
+                question_type = AnswerTypeEnum.OPEN
+
+
             answer = Answer(
-                question_number=answer_data['question_number'],
-                question_type=answer_data['question_type'],
-                correct_answer=answer_data['correct_answer'],
+                question_number=int(answer_data['question_number']),
+                question_type=question_type,
+                correct_answer=answer_data['answer'],
                 test_id=test.id,
                 score=answer_data['score'],
             )

@@ -10,8 +10,8 @@ from sqlalchemy.ext.asyncio import create_async_engine, async_sessionmaker
 from redis.asyncio import Redis
 
 from app.config import load_config, PATH
-from app.models.dao import get_test_info, pass_test
-from app.pydantic_models import SubmitTest
+from app.models.dao import get_test_info, pass_test, add_full_test
+from app.pydantic_models import SubmitTest, CreateTest
 from app.tg_bot.bot import bot, dp, bot_preparation
 
 
@@ -59,7 +59,7 @@ app.add_middleware(
 
 @app.get("/")
 async def root(request: Request):
-    return app.templates.TemplateResponse(name='index.html', context={'request': request})
+    return app.templates.TemplateResponse(name='pass_test.html', context={'request': request})
 
 
 @app.get("/api/check-test")
@@ -108,3 +108,32 @@ async def webhook(request: Request) -> None:
     update_data = await request.json()
     update = Update(**update_data)
     await dp.feed_update(bot, update)
+
+
+@app.get("/create/test")
+async def root(request: Request):
+    return app.templates.TemplateResponse(name='create_test.html', context={'request': request})
+
+
+@app.get('/api/create/test/check')
+async def check_test_name(request: Request, test_name: str):
+    test = await get_test_info(test_name, async_session_maker=app.async_session_maker, redis=app.redis)
+    if test is None:
+        return {
+            'allowed': True
+        }
+    return {
+        'allowed': False,
+        'error': 'Test yaratilib bolingan'
+    }
+
+
+@app.post('/api/create/test')
+async def create_test(test_data: CreateTest):
+    test_data.start_time = datetime.datetime.strptime(test_data.start_time, '%Y-%m-%d %H:%M:%S.%f')
+    test_data.end_time = datetime.datetime.strptime(test_data.end_time, '%Y-%m-%d %H:%M:%S.%f')
+    await add_full_test(test_data=test_data, async_session_maker=app.async_session_maker)
+    return {
+        'created': True,
+        'errors': None
+    }
