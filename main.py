@@ -9,6 +9,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from fastapi.templating import Jinja2Templates
 from fastapi.staticfiles import StaticFiles
 from sqlalchemy.ext.asyncio import create_async_engine, async_sessionmaker
+from sqlalchemy.pool import NullPool
 from redis.asyncio import Redis
 
 from app.config import load_config, PATH
@@ -30,7 +31,7 @@ async def lifespan(app: FastAPI):
     app.config = config
 
     engine = create_async_engine(url=db_url)
-    async_session_maker = async_sessionmaker(engine, expire_on_commit=False)
+    async_session_maker = async_sessionmaker(engine, expire_on_commit=False, poolclass=NullPool)
     app.async_session_maker = async_session_maker
 
     # redis preparation
@@ -38,7 +39,7 @@ async def lifespan(app: FastAPI):
     app.redis = redis
 
     # tg bot preparation
-    bot.async_session_maker = async_sessionmaker(engine, expire_on_commit=False)
+    bot.async_session_maker = async_sessionmaker(engine, expire_on_commit=False, poolclass=NullPool)
 
     await bot_preparation()
 
