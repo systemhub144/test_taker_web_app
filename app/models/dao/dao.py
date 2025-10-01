@@ -59,6 +59,11 @@ class TestDAO(BaseDAO):
         stmt = select(Test).where(Test.test_name == test_id)
         return (await session.execute(stmt)).scalars().first()
 
+    @classmethod
+    async def get_test_info_by_id(cls, session: AsyncSession, test_id: str) -> Test:
+        stmt = select(Test).where(Test.id == test_id)
+        return (await session.execute(stmt)).scalars().first()
+
 
 class UserDAO(BaseDAO):
     model = User
@@ -124,6 +129,7 @@ class UserDAO(BaseDAO):
         test_results['city'] = user_test_data.city
         test_results['user_id'] = user_test_data.user_id
         test_results['lastname'] = user_test_data.lastname
+        test_results['test_id'] = user_test_data.test_id
 
         return test_results
 

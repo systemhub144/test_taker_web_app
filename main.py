@@ -1,5 +1,7 @@
 import datetime
 from contextlib import asynccontextmanager
+from zoneinfo import ZoneInfo
+import pytz
 
 from aiogram.types import Update
 from fastapi import FastAPI, Request
@@ -71,13 +73,23 @@ async def check_test(test_code: str):
             'allowed': False,
             'error': 'Test topilmadi'
         }
+    utc = pytz.UTC
 
-    end_time = datetime.datetime.strptime(test['end_time'], '%Y-%m-%d %H:%M:%S.%f')
+    end_time = datetime.datetime.strptime(test['end_time'], '%Y-%m-%d %H:%M:%S').replace(tzinfo=utc)
+    start_time = datetime.datetime.strptime(test['start_time'], '%Y-%m-%d %H:%M:%S').replace(tzinfo=utc)
 
-    if datetime.datetime.now() > end_time and False: # for development
+    tz_gmt_plus_5 = ZoneInfo("Etc/GMT-5")
+    current_time = datetime.datetime.now(tz_gmt_plus_5)
+
+    if current_time > end_time:
         return {
             'allowed': False,
             'error': 'Test Yakunlandi'
+        }
+    if start_time > current_time:
+        return {
+            'allowed': False,
+            'error': 'Test Boshlanmagan'
         }
 
     test['allowed'] = True
@@ -100,7 +112,9 @@ async def submit_test(user_answers: SubmitTest):
                f'Hato javoblari: {user_results['wrong_answers']}\n'
                f'Balli: {user_results['score']}\n')
 
-    await bot.send_message(text=message, chat_id=app.config.ADMIN_ID)
+    test_info = await get_test_info(test_id=user_results['test_id'], async_session_maker=app.async_session_maker, by_id=True)
+
+    await bot.send_message(text=message, chat_id=test_info['admin_id'])
 
 
 @app.post("/webhook")
@@ -116,7 +130,7 @@ async def root(request: Request):
 
 
 @app.get('/api/create/test/check')
-async def check_test_name(request: Request, test_name: str):
+async def check_test_name(test_name: str):
     test = await get_test_info(test_name, async_session_maker=app.async_session_maker, redis=app.redis)
     if test is None:
         return {
@@ -130,9 +144,24 @@ async def check_test_name(request: Request, test_name: str):
 
 @app.post('/api/create/test')
 async def create_test(test_data: CreateTest):
-    test_data.start_time = datetime.datetime.strptime(test_data.start_time, '%Y-%m-%d %H:%M:%S.%f')
-    test_data.end_time = datetime.datetime.strptime(test_data.end_time, '%Y-%m-%d %H:%M:%S.%f')
+    try:
+        test_data.start_time = datetime.datetime.strptime(test_data.start_time, '%Y-%m-%d %H:%M:%S.%f')
+        test_data.end_time = datetime.datetime.strptime(test_data.end_time, '%Y-%m-%d %H:%M:%S.%f')
+    except ValueError as e:
+        raise {
+            'created': False,
+            'error': 'The format of time is incorrect',
+        }
+
     await add_full_test(test_data=test_data, async_session_maker=app.async_session_maker)
+
+    await bot.send_message(chat_id=test_data.user_id, text=f'Test yaratilindi\n'
+                                                           f'codi: {test_data.test_name}\n'
+                                                           f'test vaqti: {test_data.test_time} minut\n'
+                                                           f'ishlash vaqti:\n'
+                                                           f'{test_data.start_time} dan\n'
+                                                           f'{test_data.end_time} gacha\n')
+
     return {
         'created': True,
         'errors': None

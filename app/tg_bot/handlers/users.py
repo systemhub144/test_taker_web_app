@@ -10,9 +10,11 @@ user_router = Router()
 
 @user_router.message(CommandStart())
 async def command_start_handler(message: Message) -> None:
+    is_admin = str(message.from_user.id) in [admin_id for admin_id in message.bot.config.ADMIN_IDS.split(',')]
+
     await message.answer(f"Assalomu alaykum! 👋 <b>{message.from_user.full_name}</b>"
                               f"📋 Test ishlash uchun pastdagi tugmani bosing:",
-                         reply_markup=get_start_keyboard(message.bot.config.BASE_URL, message.from_user.id))
+                         reply_markup=get_start_keyboard(message.bot.config.BASE_URL, message.from_user.id, is_admin))
 
 
 @user_router.callback_query(F.data == "results")

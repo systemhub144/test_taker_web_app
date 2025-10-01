@@ -8,7 +8,12 @@ from app.models.database import connection
 
 
 @connection
-async def get_test_info(test_id: str, session: AsyncSession, redis: Redis) -> dict | None:
+async def get_test_info(test_id: str | int, session: AsyncSession, redis: Redis = None, by_id: bool = False) -> dict | None:
+    if by_id:
+        return {
+            'admin_id': (await TestDAO().get_test_info_by_id(test_id=test_id, session=session)).user_id
+        }
+
     test_data = await redis.get(test_id)
     if test_data is None:
         test = await TestDAO().get_test_info_by_name(test_id=test_id, session=session)
@@ -20,7 +25,7 @@ async def get_test_info(test_id: str, session: AsyncSession, redis: Redis) -> di
                 "test_name": test.test_name,
                 "test_id": test.id,
                 "start_time": str(test.start_time),
-                "end_time": str(test.end_time),
+                "end_time": str(test.end_time)
             }
 
             await redis.set(test_id, json.dumps(test_new_data))

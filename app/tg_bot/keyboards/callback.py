@@ -2,17 +2,23 @@ from aiogram import types
 from aiogram.types import InlineKeyboardMarkup, InlineKeyboardButton
 from aiogram.utils.keyboard import InlineKeyboardBuilder
 
-def get_start_keyboard(web_app_url: str, user_id: int) -> InlineKeyboardMarkup:
+def get_start_keyboard(web_app_url: str, user_id: int, is_admin: bool = False) -> InlineKeyboardMarkup:
     builder = InlineKeyboardBuilder()
 
+    if is_admin:
+        web_app = types.WebAppInfo(url=f'{web_app_url}/create/test/?user_id={user_id}')
+        web_app_butt = types.InlineKeyboardButton(text='Test yaratish', web_app=web_app)
+        builder.add(web_app_butt)
+
+
     web_app = types.WebAppInfo(url=f'{web_app_url}/?user_id={user_id}')
-    web_app_butt = types.InlineKeyboardButton(text='testan otish', web_app=web_app)
+    web_app_butt = types.InlineKeyboardButton(text='✏️ Testni boshlash', web_app=web_app)
 
     builder.add(web_app_butt)
 
     builder.row(
-        InlineKeyboardButton(text="meming natijalarim", callback_data="results"),
-                InlineKeyboardButton(text="tahlil", callback_data="analysis")
+        InlineKeyboardButton(text="📊 Natijalarim", callback_data="results"),
+                InlineKeyboardButton(text="🔍 Test tahlili", callback_data="analysis")
     )
 
     return builder.as_markup()
