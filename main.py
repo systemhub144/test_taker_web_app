@@ -9,6 +9,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from fastapi.templating import Jinja2Templates
 from fastapi.staticfiles import StaticFiles
 from sqlalchemy.ext.asyncio import create_async_engine, async_sessionmaker
+from sqlalchemy.pool import NullPool
 from redis.asyncio import Redis
 
 from app.config import load_config, PATH
@@ -73,20 +74,21 @@ async def check_test(test_code: str):
             'allowed': False,
             'error': 'Test topilmadi'
         }
-    utc = pytz.UTC
-
-    end_time = datetime.datetime.strptime(test['end_time'], '%Y-%m-%d %H:%M:%S').replace(tzinfo=utc)
-    start_time = datetime.datetime.strptime(test['start_time'], '%Y-%m-%d %H:%M:%S').replace(tzinfo=utc)
 
     tz_gmt_plus_5 = ZoneInfo("Etc/GMT-5")
     current_time = datetime.datetime.now(tz_gmt_plus_5)
 
+    end_time = datetime.datetime.strptime(test['end_time'], '%Y-%m-%d %H:%M:%S').replace(tzinfo=tz_gmt_plus_5)
+    start_time = datetime.datetime.strptime(test['start_time'], '%Y-%m-%d %H:%M:%S').replace(tzinfo=tz_gmt_plus_5)
+
     if current_time > end_time:
+        print('Yakunlangan')
         return {
             'allowed': False,
             'error': 'Test Yakunlandi'
         }
     if start_time > current_time:
+        print('Boshlanmagan')
         return {
             'allowed': False,
             'error': 'Test Boshlanmagan'
