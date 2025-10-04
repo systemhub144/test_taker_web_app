@@ -16,12 +16,7 @@ dp = Dispatcher()
 async def bot_preparation() -> None:
     await set_all_commands(bot)
     webhook_url = config.get_webhook_url()
-    await bot.set_webhook(
-        url=webhook_url,
-        allowed_updates=dp.resolve_used_update_types(),
-        drop_pending_updates=True
-    )
-
+    await bot.set_webhook(webhook_url)
     bot.config = config
 
     include_all_routers(dp)

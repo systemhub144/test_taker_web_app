@@ -1,6 +1,6 @@
 from datetime import datetime
 
-from sqlalchemy import String, ForeignKey
+from sqlalchemy import String, ForeignKey, BigInteger
 from sqlalchemy.orm import Mapped, mapped_column
 
 from app.models.database import Base, CloseAnswerEnum, AnswerTypeEnum
@@ -8,7 +8,7 @@ from app.models.database import Base, CloseAnswerEnum, AnswerTypeEnum
 
 class Test(Base):
     test_name: Mapped[str] = mapped_column(String, unique=True)
-    user_id: Mapped[int]
+    user_id: Mapped[int] = mapped_column(BigInteger)
     open_questions: Mapped[int] = mapped_column(default=0)
     close_questions: Mapped[int] = mapped_column(default=0)
     test_time: Mapped[int] = mapped_column(default=60)
@@ -24,7 +24,7 @@ class User(Base):
     username: Mapped[str] = mapped_column(String(50), nullable=False)
     lastname: Mapped[str] = mapped_column(String(50))
     city: Mapped[str] = mapped_column(String(50), nullable=False)
-    user_id: Mapped[int] = mapped_column(nullable=False)
+    user_id: Mapped[int] = mapped_column(BigInteger, nullable=False)
 
     def __repr__(self):
         return f'<User {self.user_id}>'
@@ -33,7 +33,7 @@ class User(Base):
 class TestAttempt(Base):
     user_id: Mapped[int] = mapped_column(ForeignKey('users.id'))
     test_id: Mapped[int] = mapped_column(ForeignKey('tests.id'))
-    tg_user_id: Mapped[int]
+    tg_user_id: Mapped[int] = mapped_column(BigInteger)
     score: Mapped[float] = mapped_column(default=0)
     wrong_answers: Mapped[int] = mapped_column(default=0)
     correct_answers: Mapped[int] = mapped_column(default=0)

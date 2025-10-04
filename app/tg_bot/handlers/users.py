@@ -21,6 +21,10 @@ async def command_start_handler(message: Message) -> None:
 async def get_all_results_handler(callback: CallbackQuery) -> None:
     results = await get_all_results(user_id=callback.from_user.id, async_session_maker=callback.bot.async_session_maker)
 
+    if not results.items():
+        await callback.message.reply('Siz hali test yechmagansiz')
+        return
+
     text_parts = ['Test natijalari']
     for test_name, result in results.items():
         text_parts.append(
@@ -42,6 +46,9 @@ async def get_all_results_handler(callback: CallbackQuery) -> None:
 async def get_all_test(callback: CallbackQuery) -> None:
     attempts = (await get_all_test_attempts(user_id=callback.from_user.id,
                                             async_session_maker=callback.bot.async_session_maker))
+    if not attempts:
+        await callback.message.reply('Siz hali test yechmagansiz')
+        return
 
     await callback.message.edit_text(
         text='testni tanlang',
