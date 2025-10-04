@@ -7,7 +7,7 @@ from app.models.database import Base, CloseAnswerEnum, AnswerTypeEnum
 
 
 class Test(Base):
-    test_name: Mapped[str] = mapped_column(String, unique=True)
+    test_name: Mapped[str]
     user_id: Mapped[int] = mapped_column(BigInteger)
     open_questions: Mapped[int] = mapped_column(default=0)
     close_questions: Mapped[int] = mapped_column(default=0)

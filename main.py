@@ -1,7 +1,6 @@
 import datetime
 from contextlib import asynccontextmanager
 from zoneinfo import ZoneInfo
-import pytz
 
 from aiogram.types import Update
 from fastapi import FastAPI, Request
@@ -9,7 +8,6 @@ from fastapi.middleware.cors import CORSMiddleware
 from fastapi.templating import Jinja2Templates
 from fastapi.staticfiles import StaticFiles
 from sqlalchemy.ext.asyncio import create_async_engine, async_sessionmaker
-from sqlalchemy.pool import NullPool
 from redis.asyncio import Redis
 
 from app.config import load_config, PATH
@@ -31,7 +29,7 @@ async def lifespan(app: FastAPI):
     app.config = config
 
     engine = create_async_engine(url=db_url)
-    async_session_maker = async_sessionmaker(engine, expire_on_commit=False, poolclass=NullPool)
+    async_session_maker = async_sessionmaker(engine, expire_on_commit=False)
     app.async_session_maker = async_session_maker
 
     # redis preparation
@@ -39,7 +37,7 @@ async def lifespan(app: FastAPI):
     app.redis = redis
 
     # tg bot preparation
-    bot.async_session_maker = async_sessionmaker(engine, expire_on_commit=False, poolclass=NullPool)
+    bot.async_session_maker = async_sessionmaker(engine, expire_on_commit=False)
 
     await bot_preparation()
 
@@ -66,7 +64,7 @@ async def root(request: Request):
 
 
 @app.get("/api/check-test")
-async def check_test(test_code: str):
+async def check_test(test_code: int):
     test = await get_test_info(test_code, async_session_maker=app.async_session_maker, redis=app.redis)
 
     if not test:
@@ -82,13 +80,11 @@ async def check_test(test_code: str):
     start_time = datetime.datetime.strptime(test['start_time'], '%Y-%m-%d %H:%M:%S').replace(tzinfo=tz_gmt_plus_5)
 
     if current_time > end_time:
-        print('Yakunlangan')
         return {
             'allowed': False,
             'error': 'Test Yakunlandi'
         }
     if start_time > current_time:
-        print('Boshlanmagan')
         return {
             'allowed': False,
             'error': 'Test Boshlanmagan'
@@ -114,7 +110,9 @@ async def submit_test(user_answers: SubmitTest):
                f'Hato javoblari: {user_results['wrong_answers']}\n'
                f'Balli: {user_results['score']}\n')
 
-    test_info = await get_test_info(test_id=user_results['test_id'], async_session_maker=app.async_session_maker, by_id=True)
+    test_info = await get_test_info(test_id=user_results['test_id'],
+                                    async_session_maker=app.async_session_maker,
+                                    redis=app.redis)
 
     await bot.send_message(text=message, chat_id=test_info['admin_id'])
 
@@ -133,14 +131,8 @@ async def root(request: Request):
 
 @app.get('/api/create/test/check')
 async def check_test_name(test_name: str):
-    test = await get_test_info(test_name, async_session_maker=app.async_session_maker, redis=app.redis)
-    if test is None:
-        return {
-            'allowed': True
-        }
     return {
-        'allowed': False,
-        'error': 'Test yaratilib bolingan'
+        'allowed': True
     }
 
 
@@ -155,10 +147,11 @@ async def create_test(test_data: CreateTest):
             'error': 'The format of time is incorrect',
         }
 
-    await add_full_test(test_data=test_data, async_session_maker=app.async_session_maker)
+    test_id = await add_full_test(test_data=test_data, async_session_maker=app.async_session_maker)
 
     await bot.send_message(chat_id=test_data.user_id, text=f'Test yaratilindi\n'
-                                                           f'codi: {test_data.test_name}\n'
+                                                           f'nomi: {test_data.test_name}\n'
+                                                           f'codi: {test_id}\n'
                                                            f'test vaqti: {test_data.test_time} minut\n'
                                                            f'ishlash vaqti:\n'
                                                            f'{test_data.start_time} dan\n'

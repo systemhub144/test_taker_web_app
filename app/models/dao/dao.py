@@ -55,12 +55,7 @@ class TestDAO(BaseDAO):
         return test
 
     @classmethod
-    async def get_test_info_by_name(cls, session: AsyncSession, test_id: str) -> Test:
-        stmt = select(Test).where(Test.test_name == test_id)
-        return (await session.execute(stmt)).scalars().first()
-
-    @classmethod
-    async def get_test_info_by_id(cls, session: AsyncSession, test_id: str) -> Test:
+    async def get_test_info_by_id(cls, session: AsyncSession, test_id: int) -> Test:
         stmt = select(Test).where(Test.id == test_id)
         return (await session.execute(stmt)).scalars().first()
 

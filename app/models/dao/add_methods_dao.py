@@ -12,6 +12,6 @@ async def pass_test(user_test_data: SubmitTest, session: AsyncSession):
 
 
 @connection
-async def add_full_test(test_data: dict, session: AsyncSession):
+async def add_full_test(test_data: dict, session: AsyncSession) -> int:
     new_test = await TestDAO.add_test_with_answers(session=session, test_data=test_data)
     return new_test.id

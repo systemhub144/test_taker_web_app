@@ -8,15 +8,10 @@ from app.models.database import connection
 
 
 @connection
-async def get_test_info(test_id: str | int, session: AsyncSession, redis: Redis = None, by_id: bool = False) -> dict | None:
-    if by_id:
-        return {
-            'admin_id': (await TestDAO().get_test_info_by_id(test_id=test_id, session=session)).user_id
-        }
-
-    test_data = await redis.get(test_id)
+async def get_test_info(test_id: int, session: AsyncSession, redis: Redis = None) -> dict | None:
+    test_data = await redis.get(str(test_id))
     if test_data is None:
-        test = await TestDAO().get_test_info_by_name(test_id=test_id, session=session)
+        test = await TestDAO().get_test_info_by_id(test_id=test_id, session=session)
         if test is not None:
             test_new_data = {
                 "minutes": test.test_time,
@@ -25,10 +20,11 @@ async def get_test_info(test_id: str | int, session: AsyncSession, redis: Redis 
                 "test_name": test.test_name,
                 "test_id": test.id,
                 "start_time": str(test.start_time),
-                "end_time": str(test.end_time)
+                "end_time": str(test.end_time),
+                'admin_id': test.user_id
             }
 
-            await redis.set(test_id, json.dumps(test_new_data))
+            await redis.set(str(test_id), json.dumps(test_new_data))
 
             return test_new_data
         return None

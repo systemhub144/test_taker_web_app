@@ -18,7 +18,6 @@ class Settings(BaseSettings):
 
     BOT_TOKEN: str
     BASE_URL: str
-    ADMIN_IDS: str
 
     def get_db_url(self):
         return (f"postgresql+asyncpg://{self.DB_USER}:{self.DB_PASSWORD}@"
@@ -48,7 +47,6 @@ def load_config(path: Path) -> Settings:
         REDIS_PORT=env.int('REDIS_PORT'),
         BOT_TOKEN=env.str('BOT_TOKEN'),
         BASE_URL=env.str('BASE_URL'),
-        ADMIN_IDS=env.str('ADMIN_IDS'),
     )
 
     config.get_db_url()
