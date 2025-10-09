@@ -3,7 +3,7 @@ import json
 from redis import Redis
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from app.models.dao.dao import TestDAO, TestAttemptDAO
+from app.models.dao.dao import TestDAO, TestAttemptDAO, UserDAO
 from app.models.database import connection
 
 
@@ -14,14 +14,15 @@ async def get_test_info(test_id: int, session: AsyncSession, redis: Redis = None
         test = await TestDAO().get_test_info_by_id(test_id=test_id, session=session)
         if test is not None:
             test_new_data = {
-                "minutes": test.test_time,
-                "open_questions": test.open_questions,
-                "close_questions": test.close_questions,
-                "test_name": test.test_name,
-                "test_id": test.id,
-                "start_time": str(test.start_time),
-                "end_time": str(test.end_time),
-                'admin_id': test.user_id
+                'minutes': test.test_time,
+                'open_questions': test.open_questions,
+                'close_questions': test.close_questions,
+                'test_name': test.test_name,
+                'test_id': test.id,
+                'start_time': str(test.start_time),
+                'end_time': str(test.end_time),
+                'admin_id': test.user_id,
+                'is_ended': test.is_ended,
             }
 
             await redis.set(str(test_id), json.dumps(test_new_data))
@@ -31,6 +32,10 @@ async def get_test_info(test_id: int, session: AsyncSession, redis: Redis = None
 
     return json.loads(test_data)
 
+@connection
+async def check_test_attempt(test_id: int, user_id: int, session: AsyncSession) -> bool:
+    attempt_data = not (await TestAttemptDAO.check_test_attempts(test_id=test_id, user_id=user_id, session=session))
+    return not attempt_data
 
 @connection
 async def get_all_results(user_id: int, session: AsyncSession):
@@ -46,3 +51,14 @@ async def get_user_answers(user_attempt: int, session: AsyncSession):
 async def get_all_test_attempts(user_id: int, session: AsyncSession):
     test = await TestAttemptDAO.get_all_test_attempts(user_id=user_id, session=session)
     return test
+
+@connection
+async def get_all_users_results(test_id: int, session: AsyncSession):
+    results = await TestDAO.get_all_results(test_id=test_id, session=session)
+    return results
+
+
+@connection
+async def get_user_data(user_id: int, session: AsyncSession):
+    result = await UserDAO.get_user_data_by_id(user_id=user_id, session=session)
+    return result

@@ -3,8 +3,12 @@ from aiogram.filters import CommandStart
 from aiogram.types import Message, CallbackQuery
 
 from app.tg_bot.keyboards.callback import get_start_keyboard, create_tests_keyboard
-from app.models.dao import get_all_results, get_user_answers, get_all_test_attempts
-
+from app.models.dao import (get_all_results,
+                            get_user_answers,
+                            get_all_test_attempts,
+                            stop_testing,
+                            get_all_users_results,
+                            get_user_data)
 
 user_router = Router()
 
@@ -70,3 +74,28 @@ async def get_analysis(callback: CallbackQuery) -> None:
             )
 
     await callback.message.answer(text=''.join(text_parts))
+
+
+@user_router.callback_query(F.data.split('::')[0] == 'stop_test')
+async def stop_test(callback: CallbackQuery) -> None:
+    await stop_testing(test_id=callback.data.split('::')[-1],
+                    async_session_maker=callback.bot.async_session_maker,
+                    redis=callback.bot.redis)
+
+
+@user_router.callback_query(F.data.split('::')[0] == 'get_results_test')
+async def get_results_test(callback: CallbackQuery) -> None:
+    results = (await get_all_users_results(int(callback.data.split('::')[-1]),
+                                           async_session_maker=callback.bot.async_session_maker))
+    results.reverse()
+    message_parts = ['Test natijalari\n\n']
+
+    medals = ['🥇', '🥈', '🥉']
+    for i, attempt in enumerate(results):
+        user_data = await get_user_data(user_id=attempt.user_id, async_session_maker=callback.bot.async_session_maker)
+        full_name = f'{user_data.lastname} {user_data.username}'
+        medal = medals[i] if i < len(medals) else ''
+
+        message_parts.append(f'{full_name} - {attempt.score} ta {medal}')
+
+    await callback.message.reply(text='\n'.join(message_parts))

@@ -32,3 +32,12 @@ def create_tests_keyboard(attempts: dict, user_id: int):
     builder.adjust(1)
 
     return builder.as_markup()
+
+
+def test_controls_keyboard(test_id: int):
+    builder = InlineKeyboardBuilder()
+
+    builder.add(InlineKeyboardButton(text='❌ Testni toxtatish', callback_data=f'stop_test::{test_id}'))
+    builder.add(InlineKeyboardButton(text='📊 Natijalar', callback_data=f'get_results_test::{test_id}'))
+
+    return builder.as_markup()

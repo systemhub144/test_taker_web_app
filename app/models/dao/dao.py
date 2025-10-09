@@ -1,8 +1,8 @@
 import datetime
-from typing import Sequence
+from typing import Sequence, Any, Coroutine
 
 from sqlalchemy.ext.asyncio import AsyncSession
-from sqlalchemy import select
+from sqlalchemy import select, Row, RowMapping
 
 from app.models.dao.base import BaseDAO
 from app.models.models import Test, User, TestAttempt, Answer, UserAnswer
@@ -58,6 +58,23 @@ class TestDAO(BaseDAO):
     async def get_test_info_by_id(cls, session: AsyncSession, test_id: int) -> Test:
         stmt = select(Test).where(Test.id == test_id)
         return (await session.execute(stmt)).scalars().first()
+
+
+    @classmethod
+    async def stop_test(cls, session: AsyncSession, test_id: int) -> bool:
+        stmt = select(Test).where(Test.id == test_id)
+        test = (await session.execute(stmt)).scalars().first()
+
+        test.is_ended = False
+
+        await session.commit()
+        return True
+
+    @classmethod
+    async def get_all_results(cls, session: AsyncSession, test_id: int) -> Sequence[TestAttempt]:
+        stmt = select(TestAttempt).where(TestAttempt.test_id == test_id).order_by(TestAttempt.score)
+        result = (await session.execute(stmt)).scalars().all()
+        return result
 
 
 class UserDAO(BaseDAO):
@@ -128,6 +145,12 @@ class UserDAO(BaseDAO):
 
         return test_results
 
+    @classmethod
+    async def get_user_data_by_id(cls, user_id: int, session: AsyncSession) -> UserAnswer | None:
+        stmt = select(User).where(User.id == user_id)
+        result = (await session.execute(stmt)).scalars().first()
+        return result
+
 
 class TestAttemptDAO(BaseDAO):
     model = TestAttempt
@@ -164,6 +187,12 @@ class TestAttemptDAO(BaseDAO):
 
         return result
 
+    @classmethod
+    async def check_test_attempts(cls, user_id: int, test_id: int, session: AsyncSession) -> TestAttempt | None:
+        stmt = select(TestAttempt).where(TestAttempt.tg_user_id == user_id).where(TestAttempt.test_id == test_id)
+        result = (await session.execute(stmt)).scalars().first()
+        print(result)
+        return result
 
 class AnswerDAO(BaseDAO):
     model = Answer

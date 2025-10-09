@@ -11,9 +11,10 @@ from sqlalchemy.ext.asyncio import create_async_engine, async_sessionmaker
 from redis.asyncio import Redis
 
 from app.config import load_config, PATH
-from app.models.dao import get_test_info, pass_test, add_full_test
+from app.models.dao import get_test_info, pass_test, add_full_test, check_test_attempt
 from app.pydantic_models import SubmitTest, CreateTest
 from app.tg_bot.bot import bot, dp, bot_preparation
+from app.tg_bot.keyboards.callback import test_controls_keyboard
 
 
 # app preparation
@@ -38,6 +39,7 @@ async def lifespan(app: FastAPI):
 
     # tg bot preparation
     bot.async_session_maker = async_sessionmaker(engine, expire_on_commit=False)
+    bot.redis = redis
 
     await bot_preparation()
 
@@ -64,13 +66,19 @@ async def root(request: Request):
 
 
 @app.get("/api/check-test")
-async def check_test(test_code: int):
-    test = await get_test_info(test_code, async_session_maker=app.async_session_maker, redis=app.redis)
+async def check_test(test_id: int, user_id: int):
+    test = await get_test_info(test_id, async_session_maker=app.async_session_maker, redis=app.redis)
 
     if not test:
         return {
             'allowed': False,
             'error': 'Test topilmadi'
+        }
+
+    if not test['is_ended']:
+        return {
+            'allowed': False,
+            'error': 'Test Yakunlandi'
         }
 
     tz_gmt_plus_5 = ZoneInfo("Etc/GMT-5")
@@ -90,6 +98,14 @@ async def check_test(test_code: int):
             'error': 'Test Boshlanmagan'
         }
 
+    test_attempt = await check_test_attempt(test_id, user_id, async_session_maker=app.async_session_maker)
+
+    if test_attempt:
+        return {
+            'allowed': False,
+            'error': 'Siz testdan otib bolgansiz'
+        }
+
     test['allowed'] = True
 
     return test
@@ -97,8 +113,10 @@ async def check_test(test_code: int):
 
 @app.post('/api/submit-test')
 async def submit_test(user_answers: SubmitTest):
-    user_answers.started_at = datetime.datetime.strptime(user_answers.started_at, '%Y-%m-%d %H:%M:%S.%f')
-    user_answers.completed_at = datetime.datetime.strptime(user_answers.completed_at, '%Y-%m-%d %H:%M:%S.%f')
+    user_answers.started_at = datetime.datetime.strptime(user_answers.started_at,
+                                                         '%Y-%m-%dT%H:%M:%S.%fZ').replace(tzinfo=datetime.timezone.utc)
+    user_answers.completed_at = datetime.datetime.strptime(user_answers.completed_at,
+                                                           '%Y-%m-%dT%H:%M:%S.%fZ').replace(tzinfo=datetime.timezone.utc)
     user_results = await pass_test(user_test_data=user_answers, async_session_maker=app.async_session_maker)
 
     message = (f'testning natijalari\n'
@@ -155,7 +173,8 @@ async def create_test(test_data: CreateTest):
                                                            f'test vaqti: {test_data.test_time} minut\n'
                                                            f'ishlash vaqti:\n'
                                                            f'{test_data.start_time} dan\n'
-                                                           f'{test_data.end_time} gacha\n')
+                                                           f'{test_data.end_time} gacha\n',
+                           reply_markup=test_controls_keyboard(test_id))
 
     return {
         'created': True,
