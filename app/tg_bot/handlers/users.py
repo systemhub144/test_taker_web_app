@@ -1,6 +1,8 @@
 from aiogram import Router, F
 from aiogram.filters import CommandStart
 from aiogram.types import Message, CallbackQuery
+from redis import Redis
+from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.tg_bot.keyboards.callback import get_start_keyboard, create_tests_keyboard
 from app.models.dao import (get_all_results,
@@ -8,7 +10,8 @@ from app.models.dao import (get_all_results,
                             get_all_test_attempts,
                             stop_testing,
                             get_all_users_results,
-                            get_user_data)
+                            get_user_data,
+                            get_test_info, get_test_answers)
 
 user_router = Router()
 
@@ -76,26 +79,53 @@ async def get_analysis(callback: CallbackQuery) -> None:
     await callback.message.answer(text=''.join(text_parts))
 
 
+async def test_results_message_parts(test_id: int, session: AsyncSession, redis: Redis) -> list:
+    results = (await get_all_users_results(test_id,
+                                           async_session_maker=session))
+    results.reverse()
+    test_info = await get_test_info(test_id, async_session_maker=session, redis=redis)
+
+    message_parts = ['Test natijalari:\n\n'
+                     f'Test nomi: {test_info["test_name"]}'
+                     f'Test kodi: {test_id}\n\n']
+
+    medals = ['🥇', '🥈', '🥉']
+    for i, attempt in enumerate(results):
+        user_data = await get_user_data(user_id=attempt.user_id, async_session_maker=session)
+        full_name = f'{user_data.lastname} {user_data.username}'
+        medal = medals[i] if i < len(medals) else ''
+
+        message_parts.append(f'{full_name} - {attempt.score} ta {medal}')
+
+    message_parts.append('\n\nToʻgʻri javoblar: ')
+
+    answers = await get_test_answers(test_id, async_session_maker=session)
+    for answer in answers:
+        message_parts.append(f'{answer.question_number} - {answer.correct_answer}')
+
+    message_parts.append('\nTestda ishtirok etgan barchaga rahmat😊')
+    return message_parts
+
+
 @user_router.callback_query(F.data.split('::')[0] == 'stop_test')
 async def stop_test(callback: CallbackQuery) -> None:
     await stop_testing(test_id=callback.data.split('::')[-1],
                     async_session_maker=callback.bot.async_session_maker,
                     redis=callback.bot.redis)
+    await callback.message.reply('Test yakunlandi!')
+    test_id = int(callback.data.split('::')[-1])
+    message_parts = await test_results_message_parts(test_id=test_id,
+                                                     session=callback.bot.async_session_maker,
+                                                     redis=callback.bot.redis)
+
+    await callback.message.reply(text='\n'.join(message_parts))
 
 
 @user_router.callback_query(F.data.split('::')[0] == 'get_results_test')
 async def get_results_test(callback: CallbackQuery) -> None:
-    results = (await get_all_users_results(int(callback.data.split('::')[-1]),
-                                           async_session_maker=callback.bot.async_session_maker))
-    results.reverse()
-    message_parts = ['Test natijalari\n\n']
-
-    medals = ['🥇', '🥈', '🥉']
-    for i, attempt in enumerate(results):
-        user_data = await get_user_data(user_id=attempt.user_id, async_session_maker=callback.bot.async_session_maker)
-        full_name = f'{user_data.lastname} {user_data.username}'
-        medal = medals[i] if i < len(medals) else ''
-
-        message_parts.append(f'{full_name} - {attempt.score} ta {medal}')
+    test_id = int(callback.data.split('::')[-1])
+    message_parts = await test_results_message_parts(test_id=test_id,
+                                                     session=callback.bot.async_session_maker,
+                                                     redis=callback.bot.redis)
 
     await callback.message.reply(text='\n'.join(message_parts))

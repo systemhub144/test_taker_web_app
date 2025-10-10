@@ -3,7 +3,7 @@ import json
 from redis import Redis
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from app.models.dao.dao import TestDAO, TestAttemptDAO, UserDAO
+from app.models.dao.dao import TestDAO, TestAttemptDAO, UserDAO, AnswerDAO
 from app.models.database import connection
 
 
@@ -61,4 +61,10 @@ async def get_all_users_results(test_id: int, session: AsyncSession):
 @connection
 async def get_user_data(user_id: int, session: AsyncSession):
     result = await UserDAO.get_user_data_by_id(user_id=user_id, session=session)
+    return result
+
+
+@connection
+async def get_test_answers(test_id: int, session: AsyncSession):
+    result = await AnswerDAO.get_all_answers(test_id=test_id, session=session)
     return result

@@ -119,20 +119,16 @@ async def submit_test(user_answers: SubmitTest):
                                                            '%Y-%m-%dT%H:%M:%S.%fZ').replace(tzinfo=datetime.timezone.utc)
     user_results = await pass_test(user_test_data=user_answers, async_session_maker=app.async_session_maker)
 
-    message = (f'testning natijalari\n'
+    message = (f'Sizning natijangiz👇\n\n'
                f'Ism: {user_results['username']}\n'
                f'Familiyasi: {user_results['lastname']}\n'
                f'Viloyat: {user_results['city']}\n'
                f'user id: {user_results['user_id']}\n'
-               f'Togri javoblar: {user_results['correct_answers']}\n'
-               f'Hato javoblari: {user_results['wrong_answers']}\n'
+               f'Togri javoblar: {user_results['correct_answers']}✅\n'
+               f'Hato javoblari: {user_results['wrong_answers']}❌\n'
                f'Balli: {user_results['score']}\n')
 
-    test_info = await get_test_info(test_id=user_results['test_id'],
-                                    async_session_maker=app.async_session_maker,
-                                    redis=app.redis)
-
-    await bot.send_message(text=message, chat_id=test_info['admin_id'])
+    await bot.send_message(text=message, chat_id=user_results['user_id'])
 
 
 @app.post("/webhook")
@@ -167,13 +163,14 @@ async def create_test(test_data: CreateTest):
 
     test_id = await add_full_test(test_data=test_data, async_session_maker=app.async_session_maker)
 
-    await bot.send_message(chat_id=test_data.user_id, text=f'Test yaratilindi\n'
-                                                           f'nomi: {test_data.test_name}\n'
-                                                           f'codi: {test_id}\n'
-                                                           f'test vaqti: {test_data.test_time} minut\n'
-                                                           f'ishlash vaqti:\n'
-                                                           f'{test_data.start_time} dan\n'
-                                                           f'{test_data.end_time} gacha\n',
+    await bot.send_message(chat_id=test_data.user_id, text=f'Test yaratildi!\n\n'
+                                                           f'Test nomi: {test_data.test_name}\n'
+                                                           f'Test kodi: {test_id}\n'
+                                                           f'Ajratilgan vaqt: {test_data.test_time}\n'
+                                                           f'Ishlash vaqti: {test_data.start_time} dan\n '
+                                                           f'{test_data.end_time} gacha\n\n'
+                                                           f'Javoblarni yuborish uchun bot: @JahongirAcademybot\n\n'
+                                                           f'Eslatma: Javoblarni faqat @JahongirAcademyBot ga yuboring!',
                            reply_markup=test_controls_keyboard(test_id))
 
     return {

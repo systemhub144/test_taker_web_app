@@ -6,5 +6,6 @@ from .get_data_dao import (get_test_info,
                            get_user_answers,
                            check_test_attempt,
                            get_all_users_results,
-                           get_user_data)
+                           get_user_data,
+                           get_test_answers)
 from .control_data_dao import stop_testing

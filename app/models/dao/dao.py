@@ -197,6 +197,12 @@ class TestAttemptDAO(BaseDAO):
 class AnswerDAO(BaseDAO):
     model = Answer
 
+    @classmethod
+    async def get_all_answers(cls, test_id, session: AsyncSession) -> Sequence[Answer]:
+        stmt = select(Answer).where(Answer.test_id == test_id).order_by(Answer.question_number)
+        result = (await session.execute(stmt)).scalars().all()
+        return result
+
 
 class UserAnswerDAO(BaseDAO):
     model = UserAnswer
