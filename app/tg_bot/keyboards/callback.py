@@ -41,3 +41,11 @@ def test_controls_keyboard(test_id: int):
     builder.add(InlineKeyboardButton(text='📊 Natijalar', callback_data=f'get_results_test::{test_id}'))
 
     return builder.as_markup()
+
+
+def allow_admin_keyboard(user_id: int):
+    builder = InlineKeyboardBuilder()
+
+    builder.add(InlineKeyboardButton(text='Ruhsat bermoq', callback_data=f'allow_admin::{user_id}'))
+
+    return builder.as_markup()

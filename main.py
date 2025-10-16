@@ -11,10 +11,10 @@ from sqlalchemy.ext.asyncio import create_async_engine, async_sessionmaker
 from redis.asyncio import Redis
 
 from app.config import load_config, PATH
-from app.models.dao import get_test_info, pass_test, add_full_test, check_test_attempt
+from app.models.dao import get_test_info, pass_test, add_full_test, check_test_attempt, check_admin
 from app.pydantic_models import SubmitTest, CreateTest
 from app.tg_bot.bot import bot, dp, bot_preparation
-from app.tg_bot.keyboards.callback import test_controls_keyboard
+from app.tg_bot.keyboards.callback import test_controls_keyboard, allow_admin_keyboard
 
 
 # app preparation
@@ -152,11 +152,32 @@ async def check_test_name(test_name: str):
 
 @app.post('/api/create/test')
 async def create_test(test_data: CreateTest):
+    if test_data.user_id is None:
+        return {
+            'created': False,
+            'error': 'User ID is required'
+        }
+
+    if not await check_admin(user_id=test_data.user_id, async_session_maker=app.async_session_maker):
+        user_info = await bot.get_chat(chat_id=test_data.user_id)
+        await bot.send_message(chat_id=app.config.ADMIN_ID,
+                               text=f'{user_info.full_name} sizdan test yaratish uchun \n'
+                                    f'ruhsat soralmoqda\n',
+                               reply_markup=allow_admin_keyboard(test_data.user_id)
+                               )
+        await bot.send_message(chat_id=test_data.user_id,
+                               text='Siz test yarataolomaysiz, lekin sizning ruhsatnomangiz adminga janatilindi')
+
+        return {
+            'created': False,
+            'error': 'Siz test yarataolomaysiz, lekin sizning ruhsatnomangiz adminga janatilindi'
+        }
+
     try:
         test_data.start_time = datetime.datetime.strptime(test_data.start_time, '%Y-%m-%d %H:%M:%S.%f')
         test_data.end_time = datetime.datetime.strptime(test_data.end_time, '%Y-%m-%d %H:%M:%S.%f')
     except ValueError as e:
-        raise {
+        return {
             'created': False,
             'error': 'The format of time is incorrect',
         }

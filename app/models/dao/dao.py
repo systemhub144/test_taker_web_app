@@ -5,7 +5,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import select, Row, RowMapping
 
 from app.models.dao.base import BaseDAO
-from app.models.models import Test, User, TestAttempt, Answer, UserAnswer
+from app.models.models import Test, User, TestAttempt, Answer, UserAnswer, TestCreator
 from app.models.database import AnswerTypeEnum, CloseAnswerEnum
 from app.pydantic_models import SubmitTest, CreateTest
 
@@ -207,3 +207,29 @@ class AnswerDAO(BaseDAO):
 class UserAnswerDAO(BaseDAO):
     model = UserAnswer
 
+
+class TestCreatorDAO(BaseDAO):
+    model = TestCreator
+
+    @classmethod
+    async def check_is_admin(cls, user_id: int, session: AsyncSession) -> bool:
+        stmt = select(TestCreator).where(TestCreator.user_id == user_id)
+        result = (await session.execute(stmt)).scalars().first()
+
+        if result is None:
+            return False
+        return result.is_allowed
+
+
+    @classmethod
+    async def new_admin(cls, user_id: int, session: AsyncSession) -> None:
+        stmt = select(TestCreator).where(TestCreator.user_id == user_id)
+        admin = (await session.execute(stmt)).scalars().first()
+
+        if not admin is None:
+            admin.is_allowed = True
+            await session.commit()
+
+        new_admin = TestCreator(user_id=user_id, is_allowed=True)
+        session.add(new_admin)
+        await session.commit()

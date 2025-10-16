@@ -64,3 +64,11 @@ class UserAnswer(Base):
 
     def __repr__(self):
         return f'<UserAnswer attempt_id={self.attempt_id} question={self.answer_id}>'
+
+
+class TestCreator(Base):
+    user_id: Mapped[int] = mapped_column(BigInteger, nullable=False)
+    is_allowed: Mapped[bool]
+
+    def __repr__(self):
+        return f'<TestCreator user_id={self.user_id} is_allowed={self.is_allowed}>'

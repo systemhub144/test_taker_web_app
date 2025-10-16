@@ -11,7 +11,8 @@ from app.models.dao import (get_all_results,
                             stop_testing,
                             get_all_users_results,
                             get_user_data,
-                            get_test_info, get_test_answers)
+                            get_test_info, get_test_answers,
+                            add_new_admin)
 
 user_router = Router()
 
@@ -129,3 +130,13 @@ async def get_results_test(callback: CallbackQuery) -> None:
                                                      redis=callback.bot.redis)
 
     await callback.message.reply(text='\n'.join(message_parts))
+
+
+@user_router.callback_query(F.data.split('::')[0] == 'allow_admin')
+async def allow_admin(callback: CallbackQuery) -> None:
+    user_id = int(callback.data.split('::')[-1])
+
+    await add_new_admin(user_id=user_id, async_session_maker=callback.bot.async_session_maker)
+    await callback.bot.send_message(chat_id=callback.bot.config.ADMIN_ID,
+                                    text=f'Siz {user_id} id bilan odamga test yaratishga ruhsat berdingiz')
+    await callback.bot.send_message(chat_id=user_id, text='Sizga test yaratishga ruhsat berilindi')
