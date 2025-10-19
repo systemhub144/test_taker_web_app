@@ -1,5 +1,6 @@
+from dataclasses import dataclass
+
 from environs import Env
-from pydantic_settings import BaseSettings
 import logging
 from pathlib import Path
 
@@ -7,7 +8,8 @@ logger = logging.getLogger(__name__)
 PATH = Path(__file__).resolve().parent.parent
 
 
-class Settings(BaseSettings):
+@dataclass
+class Settings:
     DB_USER: str
     DB_PASSWORD: str
     DB_HOST: str
@@ -19,6 +21,10 @@ class Settings(BaseSettings):
     BOT_TOKEN: str
     BASE_URL: str
     ADMIN_ID: int
+
+    CERTIFICATE_ID: list[str]
+    VIDEO_ID: list[str]
+    CHANNELS_ID: list[str]
 
     def get_db_url(self):
         return (f"postgresql+asyncpg://{self.DB_USER}:{self.DB_PASSWORD}@"
@@ -49,6 +55,9 @@ def load_config(path: Path) -> Settings:
         BOT_TOKEN=env.str('BOT_TOKEN'),
         BASE_URL=env.str('BASE_URL'),
         ADMIN_ID=env.str('ADMIN_ID'),
+        CERTIFICATE_ID=env.list('CERTIFICATE_ID'),
+        VIDEO_ID=env.list('VIDEO_ID'),
+        CHANNELS_ID=env.list('CHANNELS_ID'),
     )
 
     config.get_db_url()

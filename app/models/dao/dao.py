@@ -22,7 +22,7 @@ class TestDAO(BaseDAO):
             test_time=test_data.test_time,
             start_time=test_data.start_time,
             end_time=test_data.end_time,
-            is_ended=test_data.is_ended,
+            is_ended=True,
             user_id=test_data.user_id
         )
 

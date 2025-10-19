@@ -2,6 +2,18 @@ from aiogram import types
 from aiogram.types import InlineKeyboardMarkup, InlineKeyboardButton
 from aiogram.utils.keyboard import InlineKeyboardBuilder
 
+
+def channel_subscription(channels_list: list[str]) -> InlineKeyboardMarkup:
+    builder = InlineKeyboardBuilder()
+
+    for channel in channels_list:
+        builder.row(InlineKeyboardButton(text=channel, url=f'https://t.me/{channel}'))
+
+    builder.row(InlineKeyboardButton(text='Tekshirish✅', callback_data='channels_check'))
+
+    return builder.as_markup()
+
+
 def get_start_keyboard(web_app_url: str, user_id: int) -> InlineKeyboardMarkup:
     builder = InlineKeyboardBuilder()
 
@@ -18,6 +30,8 @@ def get_start_keyboard(web_app_url: str, user_id: int) -> InlineKeyboardMarkup:
         InlineKeyboardButton(text="📊 Natijalarim", callback_data="results"),
                 InlineKeyboardButton(text="🔍 Test tahlili", callback_data="analysis")
     )
+
+    builder.row(InlineKeyboardButton(text='🎬Video instruktsialar', callback_data='video_instruction'))
 
     return builder.as_markup()
 
@@ -47,5 +61,14 @@ def allow_admin_keyboard(user_id: int):
     builder = InlineKeyboardBuilder()
 
     builder.add(InlineKeyboardButton(text='Ruhsat bermoq', callback_data=f'allow_admin::{user_id}'))
+
+    return builder.as_markup()
+
+
+def instruction_videos_keyboard() -> InlineKeyboardMarkup:
+    builder = InlineKeyboardBuilder()
+
+    builder.row(InlineKeyboardButton(text='🔬Test yaratish', callback_data='instruction_videos_create'))
+    builder.row(InlineKeyboardButton(text='️✏️Testdan otish', callback_data='instruction_videos_pass'))
 
     return builder.as_markup()

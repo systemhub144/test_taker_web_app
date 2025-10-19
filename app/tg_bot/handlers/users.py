@@ -1,27 +1,46 @@
-from aiogram import Router, F
-from aiogram.filters import CommandStart
+from aiogram import Router, F, Bot
 from aiogram.types import Message, CallbackQuery
-from redis import Redis
-from sqlalchemy.ext.asyncio import AsyncSession
 
-from app.tg_bot.keyboards.callback import get_start_keyboard, create_tests_keyboard
+from app.tg_bot.keyboards.callback import (get_start_keyboard,
+                                           create_tests_keyboard,
+                                           channel_subscription,
+                                           instruction_videos_keyboard)
 from app.models.dao import (get_all_results,
                             get_user_answers,
-                            get_all_test_attempts,
-                            stop_testing,
-                            get_all_users_results,
-                            get_user_data,
-                            get_test_info, get_test_answers,
-                            add_new_admin)
+                            get_all_test_attempts)
 
 user_router = Router()
 
-@user_router.message(CommandStart())
-async def command_start_handler(message: Message) -> None:
 
-    await message.answer(f"Assalomu alaykum! 👋 <b>{message.from_user.full_name}</b>"
-                              f"📋 Test ishlash uchun pastdagi tugmani bosing:",
-                         reply_markup=get_start_keyboard(message.bot.config.BASE_URL, message.from_user.id))
+async def channels_check_message(bot: Bot, user_id: int, user_full_name: str):
+    unsubscribed_channels = []
+    for channel in bot.config.CHANNELS_ID:
+        print(channel)
+        user_channel_status = await bot.get_chat_member(chat_id=f'@{channel}', user_id=user_id)
+        if user_channel_status.status == 'left':
+            unsubscribed_channels.append(channel)
+
+    if not unsubscribed_channels:
+        await bot.send_message(chat_id=user_id,
+                               text=f"Assalomu alaykum! 👋 <b>{user_full_name}</b>"
+                                    f"📋 Test ishlash uchun pastdagi tugmani bosing:",
+                               reply_markup=get_start_keyboard(bot.config.BASE_URL, user_id))
+        return
+
+    await bot.send_message(chat_id=user_id,
+                           text='Boshlashdan oldin \n'
+                                'siz kanallarimizga obuna bolishingiz lozim!',
+                           reply_markup=channel_subscription(unsubscribed_channels))
+
+
+@user_router.message()
+async def command_start_handler(message: Message) -> None:
+    await channels_check_message(bot=message.bot, user_id=message.from_user.id, user_full_name=message.from_user.full_name)
+
+
+@user_router.callback_query(F.data == 'channels_check')
+async def check_channels_subscription(callback: CallbackQuery) -> None:
+    await channels_check_message(bot=callback.bot, user_id=callback.from_user.id, user_full_name=callback.from_user.full_name)
 
 
 @user_router.callback_query(F.data == "results")
@@ -80,63 +99,17 @@ async def get_analysis(callback: CallbackQuery) -> None:
     await callback.message.answer(text=''.join(text_parts))
 
 
-async def test_results_message_parts(test_id: int, session: AsyncSession, redis: Redis) -> list:
-    results = (await get_all_users_results(test_id,
-                                           async_session_maker=session))
-    results.reverse()
-    test_info = await get_test_info(test_id, async_session_maker=session, redis=redis)
-
-    message_parts = ['Test natijalari:\n\n'
-                     f'Test nomi: {test_info["test_name"]}'
-                     f'Test kodi: {test_id}\n\n']
-
-    medals = ['🥇', '🥈', '🥉']
-    for i, attempt in enumerate(results):
-        user_data = await get_user_data(user_id=attempt.user_id, async_session_maker=session)
-        full_name = f'{user_data.lastname} {user_data.username}'
-        medal = medals[i] if i < len(medals) else ''
-
-        message_parts.append(f'{full_name} - {attempt.score} ta {medal}')
-
-    message_parts.append('\n\nToʻgʻri javoblar: ')
-
-    answers = await get_test_answers(test_id, async_session_maker=session)
-    for answer in answers:
-        message_parts.append(f'{answer.question_number} - {answer.correct_answer}')
-
-    message_parts.append('\nTestda ishtirok etgan barchaga rahmat😊')
-    return message_parts
+@user_router.callback_query(F.data == 'video_instruction')
+async def get_video_instruction(callback: CallbackQuery) -> None:
+    await callback.message.answer('Video instruktsialar',
+                                  reply_markup=instruction_videos_keyboard())
 
 
-@user_router.callback_query(F.data.split('::')[0] == 'stop_test')
-async def stop_test(callback: CallbackQuery) -> None:
-    await stop_testing(test_id=callback.data.split('::')[-1],
-                    async_session_maker=callback.bot.async_session_maker,
-                    redis=callback.bot.redis)
-    await callback.message.reply('Test yakunlandi!')
-    test_id = int(callback.data.split('::')[-1])
-    message_parts = await test_results_message_parts(test_id=test_id,
-                                                     session=callback.bot.async_session_maker,
-                                                     redis=callback.bot.redis)
-
-    await callback.message.reply(text='\n'.join(message_parts))
+@user_router.callback_query(F.data == 'instruction_videos_create')
+async def get_instruction_videos_create(callback: CallbackQuery) -> None:
+    await callback.bot.send_video(callback.from_user.id, video=callback.bot.config.VIDEO_ID[0])
 
 
-@user_router.callback_query(F.data.split('::')[0] == 'get_results_test')
-async def get_results_test(callback: CallbackQuery) -> None:
-    test_id = int(callback.data.split('::')[-1])
-    message_parts = await test_results_message_parts(test_id=test_id,
-                                                     session=callback.bot.async_session_maker,
-                                                     redis=callback.bot.redis)
-
-    await callback.message.reply(text='\n'.join(message_parts))
-
-
-@user_router.callback_query(F.data.split('::')[0] == 'allow_admin')
-async def allow_admin(callback: CallbackQuery) -> None:
-    user_id = int(callback.data.split('::')[-1])
-
-    await add_new_admin(user_id=user_id, async_session_maker=callback.bot.async_session_maker)
-    await callback.bot.send_message(chat_id=callback.bot.config.ADMIN_ID,
-                                    text=f'Siz {user_id} id bilan odamga test yaratishga ruhsat berdingiz')
-    await callback.bot.send_message(chat_id=user_id, text='Sizga test yaratishga ruhsat berilindi')
+@user_router.callback_query(F.data == 'instruction_videos_pass')
+async def get_instruction_videos_create(callback: CallbackQuery) -> None:
+    await callback.bot.send_video(callback.from_user.id, video=callback.bot.config.VIDEO_ID[1])
