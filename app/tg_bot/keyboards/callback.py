@@ -18,7 +18,7 @@ def get_start_keyboard(web_app_url: str, user_id: int) -> InlineKeyboardMarkup:
     builder = InlineKeyboardBuilder()
 
     create_test_web_app = types.WebAppInfo(url=f'{web_app_url}/create/test/?user_id={user_id}')
-    create_test_web_app_butt = types.InlineKeyboardButton(text='🔬Test yaratish', web_app=create_test_web_app)
+    create_test_web_app_butt = types.InlineKeyboardButton(text='🔬 Test yaratish', web_app=create_test_web_app)
     builder.add(create_test_web_app_butt)
 
     pass_web_app = types.WebAppInfo(url=f'{web_app_url}/?user_id={user_id}')
@@ -31,7 +31,7 @@ def get_start_keyboard(web_app_url: str, user_id: int) -> InlineKeyboardMarkup:
                 InlineKeyboardButton(text="🔍 Test tahlili", callback_data="analysis")
     )
 
-    builder.row(InlineKeyboardButton(text='🎬Video instruktsialar', callback_data='video_instruction'))
+    builder.row(InlineKeyboardButton(text='🎬 Video instruksiyalar', callback_data='video_instruction'))
 
     return builder.as_markup()
 
@@ -51,7 +51,7 @@ def create_tests_keyboard(attempts: dict, user_id: int):
 def test_controls_keyboard(test_id: int):
     builder = InlineKeyboardBuilder()
 
-    builder.add(InlineKeyboardButton(text='❌ Testni toxtatish', callback_data=f'stop_test::{test_id}'))
+    builder.add(InlineKeyboardButton(text='❌ Testni toʻxtatish', callback_data=f'stop_test::{test_id}'))
     builder.add(InlineKeyboardButton(text='📊 Natijalar', callback_data=f'get_results_test::{test_id}'))
 
     return builder.as_markup()
@@ -68,7 +68,7 @@ def allow_admin_keyboard(user_id: int):
 def instruction_videos_keyboard() -> InlineKeyboardMarkup:
     builder = InlineKeyboardBuilder()
 
-    builder.row(InlineKeyboardButton(text='🔬Test yaratish', callback_data='instruction_videos_create'))
-    builder.row(InlineKeyboardButton(text='️✏️Testdan otish', callback_data='instruction_videos_pass'))
+    builder.row(InlineKeyboardButton(text='🔬 Test yaratish', callback_data='instruction_videos_create'))
+    builder.row(InlineKeyboardButton(text='✏️ Testdan oʻtish', callback_data='instruction_videos_pass'))
 
     return builder.as_markup()

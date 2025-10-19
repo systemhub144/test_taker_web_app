@@ -22,14 +22,14 @@ async def channels_check_message(bot: Bot, user_id: int, user_full_name: str):
 
     if not unsubscribed_channels:
         await bot.send_message(chat_id=user_id,
-                               text=f"Assalomu alaykum! 👋 <b>{user_full_name}</b>"
+                               text=f"Assalomu alaykum! 👋 <b>{user_full_name}</b>\n"
                                     f"📋 Test ishlash uchun pastdagi tugmani bosing:",
                                reply_markup=get_start_keyboard(bot.config.BASE_URL, user_id))
         return
 
     await bot.send_message(chat_id=user_id,
                            text='Boshlashdan oldin \n'
-                                'siz kanallarimizga obuna bolishingiz lozim!',
+                                'siz kanallarimizga obuna bo\'lishingiz lozim!',
                            reply_markup=channel_subscription(unsubscribed_channels))
 
 
@@ -51,7 +51,7 @@ async def get_all_results_handler(callback: CallbackQuery) -> None:
         await callback.message.reply('Siz hali test yechmagansiz')
         return
 
-    text_parts = ['Test natijalari']
+    text_parts = ['Test natijalari:\n']
     for test_name, result in results.items():
         text_parts.append(
             f"<b>📊 Test natijalari:</b> {test_name}\n"
@@ -77,7 +77,7 @@ async def get_all_test(callback: CallbackQuery) -> None:
         return
 
     await callback.message.edit_text(
-        text='testni tanlang',
+        text='Testni tanlang',
         reply_markup=create_tests_keyboard(attempts=attempts, user_id=callback.from_user.id)
     )
 
@@ -101,7 +101,7 @@ async def get_analysis(callback: CallbackQuery) -> None:
 
 @user_router.callback_query(F.data == 'video_instruction')
 async def get_video_instruction(callback: CallbackQuery) -> None:
-    await callback.message.answer('Video instruktsialar',
+    await callback.message.answer('Video instruksiyalar',
                                   reply_markup=instruction_videos_keyboard())
 
 

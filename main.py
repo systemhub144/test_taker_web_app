@@ -75,10 +75,10 @@ async def check_test(test_id: int, user_id: int):
             'error': 'Test topilmadi'
         }
 
-    if not test['is_ended']:
+    if test['is_ended']:
         return {
             'allowed': False,
-            'error': 'Test Yakunlandi'
+            'error': 'Test yakunlandi'
         }
 
     tz_gmt_plus_5 = ZoneInfo("Etc/GMT-5")
@@ -90,12 +90,12 @@ async def check_test(test_id: int, user_id: int):
     if current_time > end_time:
         return {
             'allowed': False,
-            'error': 'Test Yakunlandi'
+            'error': 'Test yakunlandi'
         }
     if start_time > current_time:
         return {
             'allowed': False,
-            'error': 'Test Boshlanmagan'
+            'error': 'Test boshlanmagan'
         }
 
     test_attempt = await check_test_attempt(test_id, user_id, async_session_maker=app.async_session_maker)
@@ -103,7 +103,7 @@ async def check_test(test_id: int, user_id: int):
     if test_attempt:
         return {
             'allowed': False,
-            'error': 'Siz testdan otib bolgansiz'
+            'error': 'Siz testdan o\'tib bo\'lgansiz'
         }
 
     test['allowed'] = True
@@ -120,13 +120,13 @@ async def submit_test(user_answers: SubmitTest):
     user_results = await pass_test(user_test_data=user_answers, async_session_maker=app.async_session_maker)
 
     message = (f'Sizning natijangiz👇\n\n'
-               f'Ism: {user_results['username']}\n'
-               f'Familiyasi: {user_results['lastname']}\n'
-               f'Viloyat: {user_results['city']}\n'
-               f'user id: {user_results['user_id']}\n'
-               f'Togri javoblar: {user_results['correct_answers']}✅\n'
-               f'Hato javoblari: {user_results['wrong_answers']}❌\n'
-               f'Balli: {user_results['score']}\n')
+               f'Ism: {user_results["username"]}\n'
+               f'Familiya: {user_results["lastname"]}\n'
+               f'Viloyat: {user_results["city"]}\n'
+               f'User ID: {user_results["user_id"]}\n'
+               f'To\'g\'ri javoblar: {user_results["correct_answers"]}✅\n'
+               f'Noto\'g\'ri javoblar: {user_results["wrong_answers"]}❌\n'
+               f'Ball: {user_results["score"]}\n')
 
     await bot.send_message(text=message, chat_id=user_results['user_id'])
 
@@ -155,22 +155,22 @@ async def create_test(test_data: CreateTest):
     if test_data.user_id is None:
         return {
             'created': False,
-            'error': 'User ID is required'
+            'error': 'User ID talab qilinadi'
         }
 
     if not await check_admin(user_id=test_data.user_id, async_session_maker=app.async_session_maker):
         user_info = await bot.get_chat(chat_id=test_data.user_id)
         await bot.send_message(chat_id=app.config.ADMIN_ID,
                                text=f'{user_info.full_name} sizdan test yaratish uchun \n'
-                                    f'ruhsat soralmoqda\n',
+                                    f'ruhsat so\'ralmoqda\n',
                                reply_markup=allow_admin_keyboard(test_data.user_id)
                                )
         await bot.send_message(chat_id=test_data.user_id,
-                               text='Siz test yarataolomaysiz, lekin sizning ruhsatnomangiz adminga janatilindi')
+                               text='Siz test yarata olmaysiz, lekin sizning so\'rovingiz adminga jo\'natildi')
 
         return {
             'created': False,
-            'error': 'Siz test yarataolomaysiz, lekin sizning ruhsatnomangiz adminga janatilindi'
+            'error': 'Siz test yarata olmaysiz, lekin sizning so\'rovingiz adminga jo\'natildi'
         }
 
     try:
@@ -179,7 +179,7 @@ async def create_test(test_data: CreateTest):
     except ValueError as e:
         return {
             'created': False,
-            'error': 'The format of time is incorrect',
+            'error': 'Vaqt formati noto\'g\'ri',
         }
 
     test_id = await add_full_test(test_data=test_data, async_session_maker=app.async_session_maker)
@@ -190,7 +190,7 @@ async def create_test(test_data: CreateTest):
                                                            f'Ajratilgan vaqt: {test_data.test_time}\n'
                                                            f'Ishlash vaqti: {test_data.start_time} dan\n '
                                                            f'{test_data.end_time} gacha\n\n'
-                                                           f'Javoblarni yuborish uchun bot: @JahongirAcademybot\n\n'
+                                                           f'Javoblarni yuborish uchun bot: @JahongirAcademyBot\n\n'
                                                            f'Eslatma: Javoblarni faqat @JahongirAcademyBot ga yuboring!',
                            reply_markup=test_controls_keyboard(test_id))
 

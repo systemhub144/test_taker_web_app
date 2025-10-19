@@ -20,7 +20,7 @@ async def test_results_message_parts(test_id: int, session: AsyncSession, redis:
     test_info = await get_test_info(test_id, async_session_maker=session, redis=redis)
 
     message_parts = ['Test natijalari:\n\n'
-                     f'Test nomi: {test_info["test_name"]}'
+                     f'Test nomi: {test_info["test_name"]}\n'
                      f'Test kodi: {test_id}\n\n']
 
     medals = ['🥇', '🥈', '🥉']
@@ -35,7 +35,7 @@ async def test_results_message_parts(test_id: int, session: AsyncSession, redis:
                      f'Natijalar:\n'
                      f'Test nomi: {test_info["test_name"]}\n'
                      f'Ball: {attempt.score}\n'
-                     f'Oriningiz: {i + 1}')
+                     f'O\'rningiz: {i + 1}')
             await bot.send_document(chat_id=attempt.tg_user_id, document=bot.config.CERTIFICATE_ID[i]) if i <= 2 \
                 else await bot.send_document(chat_id=attempt.tg_user_id, document=bot.config.CERTIFICATE_ID[3])
 
@@ -86,7 +86,7 @@ async def allow_admin(callback: CallbackQuery) -> None:
     await add_new_admin(user_id=user_id, async_session_maker=callback.bot.async_session_maker)
     await callback.bot.send_message(chat_id=callback.bot.config.ADMIN_ID,
                                     text=f'Siz {user_id} id bilan odamga test yaratishga ruhsat berdingiz')
-    await callback.bot.send_message(chat_id=user_id, text='Sizga test yaratishga ruhsat berilindi')
+    await callback.bot.send_message(chat_id=user_id, text='Sizga test yaratishga ruhsat berildi')
 
 
 # @admin_router.message()

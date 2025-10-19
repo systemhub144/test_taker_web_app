@@ -12,7 +12,7 @@ async def stop_testing(test_id: str, session: AsyncSession, redis: Redis) -> boo
     redis_test = await redis.get(test_id)
     if not redis_test is None:
         redis_test = json.loads(redis_test)
-        redis_test['is_ended'] = False
+        redis_test['is_ended'] = True
 
         await redis.set(test_id, json.dumps(redis_test))
 

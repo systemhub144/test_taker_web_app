@@ -22,7 +22,7 @@ class TestDAO(BaseDAO):
             test_time=test_data.test_time,
             start_time=test_data.start_time,
             end_time=test_data.end_time,
-            is_ended=True,
+            is_ended=False,
             user_id=test_data.user_id
         )
 
@@ -65,7 +65,7 @@ class TestDAO(BaseDAO):
         stmt = select(Test).where(Test.id == test_id)
         test = (await session.execute(stmt)).scalars().first()
 
-        test.is_ended = False
+        test.is_ended = True
 
         await session.commit()
         return True
