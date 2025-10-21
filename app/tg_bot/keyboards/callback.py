@@ -14,24 +14,22 @@ def channel_subscription(channels_list: list[str]) -> InlineKeyboardMarkup:
     return builder.as_markup()
 
 
-def get_start_keyboard(web_app_url: str, user_id: int) -> InlineKeyboardMarkup:
+def get_test_create_url(web_app_url: str, user_id: int) -> InlineKeyboardMarkup:
     builder = InlineKeyboardBuilder()
 
     create_test_web_app = types.WebAppInfo(url=f'{web_app_url}/create/test/?user_id={user_id}')
     create_test_web_app_butt = types.InlineKeyboardButton(text='🔬 Test yaratish', web_app=create_test_web_app)
     builder.add(create_test_web_app_butt)
 
+    return builder.as_markup()
+
+
+def get_test_pass_url(web_app_url: str, user_id: int) -> InlineKeyboardMarkup:
+    builder = InlineKeyboardBuilder()
+
     pass_web_app = types.WebAppInfo(url=f'{web_app_url}/?user_id={user_id}')
     pass_web_app_butt = types.InlineKeyboardButton(text='✏️ Testni boshlash', web_app=pass_web_app)
-
     builder.add(pass_web_app_butt)
-
-    builder.row(
-        InlineKeyboardButton(text="📊 Natijalarim", callback_data="results"),
-                InlineKeyboardButton(text="🔍 Test tahlili", callback_data="analysis")
-    )
-
-    builder.row(InlineKeyboardButton(text='🎬 Video instruksiyalar', callback_data='video_instruction'))
 
     return builder.as_markup()
 

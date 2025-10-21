@@ -92,5 +92,8 @@ async def allow_admin(callback: CallbackQuery) -> None:
 # @admin_router.message()
 # def voice_cmd(message: Message) -> None:
 #     # Узнаем id, если требуется
-#     file_id = message.video.file_id
+#     if message.content_type == 'text':
+#         print(f'it is text: {message.text}')
+#         return
+#     file_id = message.document.file_id
 #     print(f'file_id: {file_id}') # Вывод id сообщения в консоль

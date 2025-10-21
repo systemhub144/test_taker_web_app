@@ -1,54 +1,74 @@
-from aiogram import Router, F, Bot
+from aiogram import Router, F
 from aiogram.types import Message, CallbackQuery
+from aiogram.filters import CommandStart
 
-from app.tg_bot.keyboards.callback import (get_start_keyboard,
-                                           create_tests_keyboard,
+from app.tg_bot.keyboards.callback import (create_tests_keyboard,
                                            channel_subscription,
-                                           instruction_videos_keyboard)
+                                           instruction_videos_keyboard,
+                                           get_test_create_url,
+                                           get_test_pass_url)
+from app.tg_bot.keyboards.keyboard import menu_keyboard
 from app.models.dao import (get_all_results,
                             get_user_answers,
                             get_all_test_attempts)
+from app.tg_bot.filters import ChannelSubscriptionFilter
 
 user_router = Router()
 
 
-async def channels_check_message(bot: Bot, user_id: int, user_full_name: str):
-    unsubscribed_channels = []
-    for channel in bot.config.CHANNELS_ID:
-        print(channel)
-        user_channel_status = await bot.get_chat_member(chat_id=f'@{channel}', user_id=user_id)
-        if user_channel_status.status == 'left':
-            unsubscribed_channels.append(channel)
-
-    if not unsubscribed_channels:
-        await bot.send_message(chat_id=user_id,
-                               text=f"Assalomu alaykum! 👋 <b>{user_full_name}</b>\n"
-                                    f"📋 Test ishlash uchun pastdagi tugmani bosing:",
-                               reply_markup=get_start_keyboard(bot.config.BASE_URL, user_id))
-        return
-
-    await bot.send_message(chat_id=user_id,
-                           text='Boshlashdan oldin \n'
-                                'siz kanallarimizga obuna bo\'lishingiz lozim!',
-                           reply_markup=channel_subscription(unsubscribed_channels))
-
-
-@user_router.message()
-async def command_start_handler(message: Message) -> None:
-    await channels_check_message(bot=message.bot, user_id=message.from_user.id, user_full_name=message.from_user.full_name)
-
-
 @user_router.callback_query(F.data == 'channels_check')
 async def check_channels_subscription(callback: CallbackQuery) -> None:
-    await channels_check_message(bot=callback.bot, user_id=callback.from_user.id, user_full_name=callback.from_user.full_name)
+    if await ChannelSubscriptionFilter().__call__(callback.message, callback.bot):
+        await callback.message.answer(text=f'Assalomu alaykum! 👋 <b>{callback.from_user.full_name}</b>\n'
+                                           f'📋 Test ishlash uchun pastdagi tugmani bosing:',
+                                      reply_markup=menu_keyboard())
+
+    await callback.bot.send_message(chat_id=callback.from_user.id,
+                                    text='Botdan foydalanish uchun quyidagi kanallarga a\'zo bo\'ling.',
+                                    reply_markup=channel_subscription(callback.bot.config.CHANNELS_ID))
 
 
-@user_router.callback_query(F.data == "results")
-async def get_all_results_handler(callback: CallbackQuery) -> None:
-    results = await get_all_results(user_id=callback.from_user.id, async_session_maker=callback.bot.async_session_maker)
+@user_router.message(CommandStart(), ChannelSubscriptionFilter())
+async def start_handler(message: Message) -> None:
+    await message.answer(text=f'Assalomu alaykum! 👋 <b>{message.from_user.full_name}</b>\n'
+                              f'📋 Test ishlash uchun pastdagi tugmani bosing:',
+                         reply_markup=menu_keyboard())
+
+
+@user_router.message(F.text == '➕Test yaratish', ChannelSubscriptionFilter())
+async def create_test_handler(message: Message) -> None:
+    await message.bot.send_message(chat_id=message.from_user.id,
+                                    text='yoriqnoma http://silka.com',
+                                    reply_markup=get_test_create_url(message.bot.config.BASE_URL, message.from_user.id))
+
+
+@user_router.message(F.text == '✅Javobni tekshirish', ChannelSubscriptionFilter())
+async def pass_test_handler(message: Message) -> None:
+    await message.bot.send_message(chat_id=message.from_user.id,
+                                    text='yoriqnoma http://silka.com',
+                                    reply_markup=get_test_pass_url(message.bot.config.BASE_URL, message.from_user.id))
+
+
+@user_router.message(F.text == '🤖xizmatlar', ChannelSubscriptionFilter())
+async def get_services_handler(message: Message) -> None:
+    await message.bot.send_message(chat_id=message.from_user.id,
+                                    text='🤝 Bizning xizmatlarimiz.\n\n'
+                                         '1️⃣  Test o\'tkazish.\n'
+                                         '(Botimiz orqali test o\'tkazish mutlaqo bepul. Shu jumladan blok test ham!)')
+
+
+@user_router.message(F.text == 'ℹ️Bot haqida ma\'lumot', ChannelSubscriptionFilter())
+async def get_bot_info_handler(message: Message) -> None:
+    await message.bot.send_message(chat_id=message.from_user.id,
+                                   text='Bot haqida ma\'lumot.\n\n')
+
+
+@user_router.message(F.text == "📊 Natijalarim")
+async def get_all_results_handler(message: Message) -> None:
+    results = await get_all_results(user_id=message.from_user.id, async_session_maker=message.bot.async_session_maker)
 
     if not results.items():
-        await callback.message.reply('Siz hali test yechmagansiz')
+        await message.message.reply('Siz hali test yechmagansiz')
         return
 
     text_parts = ['Test natijalari:\n']
@@ -62,23 +82,23 @@ async def get_all_results_handler(callback: CallbackQuery) -> None:
             f"<b>🕓 Tugash vaqti:</b> {result.completed_at.strftime('%Y-%m-%d %H:%M')}\n"
             f"{'─' * 30}\n"
         )
-    await callback.message.reply(
+    await message.reply(
         text=''.join(text_parts),
         parse_mode="HTML",
     )
 
 
-@user_router.callback_query(F.data == 'analysis')
-async def get_all_test(callback: CallbackQuery) -> None:
-    attempts = (await get_all_test_attempts(user_id=callback.from_user.id,
-                                            async_session_maker=callback.bot.async_session_maker))
+@user_router.message(F.text == '🔍 Test tahlili')
+async def get_all_test(message: Message) -> None:
+    attempts = (await get_all_test_attempts(user_id=message.from_user.id,
+                                            async_session_maker=message.bot.async_session_maker))
     if not attempts:
-        await callback.message.reply('Siz hali test yechmagansiz')
+        await message.reply('Siz hali test yechmagansiz')
         return
 
-    await callback.message.edit_text(
+    await message.reply(
         text='Testni tanlang',
-        reply_markup=create_tests_keyboard(attempts=attempts, user_id=callback.from_user.id)
+        reply_markup=create_tests_keyboard(attempts=attempts, user_id=message.from_user.id)
     )
 
 
@@ -99,10 +119,10 @@ async def get_analysis(callback: CallbackQuery) -> None:
     await callback.message.answer(text=''.join(text_parts))
 
 
-@user_router.callback_query(F.data == 'video_instruction')
-async def get_video_instruction(callback: CallbackQuery) -> None:
-    await callback.message.answer('Video instruksiyalar',
-                                  reply_markup=instruction_videos_keyboard())
+@user_router.message(F.text == '🎬 Video instruksiyalar')
+async def get_video_instruction(message: Message) -> None:
+    await message.answer('Video instruksiyalar',
+                         reply_markup=instruction_videos_keyboard())
 
 
 @user_router.callback_query(F.data == 'instruction_videos_create')
@@ -113,3 +133,10 @@ async def get_instruction_videos_create(callback: CallbackQuery) -> None:
 @user_router.callback_query(F.data == 'instruction_videos_pass')
 async def get_instruction_videos_create(callback: CallbackQuery) -> None:
     await callback.bot.send_video(callback.from_user.id, video=callback.bot.config.VIDEO_ID[1])
+
+
+@user_router.message()
+async def check_channels_subscription(message: Message) -> None:
+    await message.bot.send_message(chat_id=message.from_user.id,
+                           text='Botdan foydalanish uchun quyidagi kanallarga a\'zo bo\'ling.',
+                           reply_markup=channel_subscription(message.bot.config.CHANNELS_ID))
