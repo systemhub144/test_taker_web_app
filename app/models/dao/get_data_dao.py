@@ -19,8 +19,8 @@ async def get_test_info(test_id: int, session: AsyncSession, redis: Redis = None
                 'close_questions': test.close_questions,
                 'test_name': test.test_name,
                 'test_id': test.id,
-                'start_time': str(test.start_time),
-                'end_time': str(test.end_time),
+                'start_time': test.start_time.strftime("%Y-%m-%d %H:%M:%S"),
+                'end_time': test.end_time.strftime("%Y-%m-%d %H:%M:%S"),
                 'admin_id': test.user_id,
                 'is_ended': test.is_ended,
             }
