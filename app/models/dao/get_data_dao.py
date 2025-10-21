@@ -25,7 +25,7 @@ async def get_test_info(test_id: int, session: AsyncSession, redis: Redis = None
                 'is_ended': test.is_ended,
             }
 
-            await redis.set(str(test_id), json.dumps(test_new_data))
+            await redis.set(str(test_id), json.dumps(test_new_data), ex=259200)
 
             return test_new_data
         return None
