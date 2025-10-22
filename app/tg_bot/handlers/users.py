@@ -49,7 +49,7 @@ async def pass_test_handler(message: Message) -> None:
                                     reply_markup=get_test_pass_url(message.bot.config.BASE_URL, message.from_user.id))
 
 
-@user_router.message(F.text == '🤖xizmatlar', ChannelSubscriptionFilter())
+@user_router.message(F.text == '🤖Xizmatlar', ChannelSubscriptionFilter())
 async def get_services_handler(message: Message) -> None:
     await message.bot.send_message(chat_id=message.from_user.id,
                                     text='🤝 Bizning xizmatlarimiz.\n\n'
@@ -57,7 +57,7 @@ async def get_services_handler(message: Message) -> None:
                                          '(Botimiz orqali test o\'tkazish mutlaqo bepul. Shu jumladan blok test ham!)')
 
 
-@user_router.message(F.text == 'ℹ️Bot haqida ma\'lumot', ChannelSubscriptionFilter())
+@user_router.message(F.text == 'ℹ️Bot haqida ma\'lumotlar', ChannelSubscriptionFilter())
 async def get_bot_info_handler(message: Message) -> None:
     await message.bot.send_message(chat_id=message.from_user.id,
                                    text='Bot haqida ma\'lumot.\n\n')
@@ -119,7 +119,7 @@ async def get_analysis(callback: CallbackQuery) -> None:
     await callback.message.answer(text=''.join(text_parts))
 
 
-@user_router.message(F.text == '🎬 Video instruksiyalar')
+@user_router.message(F.text == '🎬Video qo\'llanma')
 async def get_video_instruction(message: Message) -> None:
     await message.answer('Video instruksiyalar',
                          reply_markup=instruction_videos_keyboard())

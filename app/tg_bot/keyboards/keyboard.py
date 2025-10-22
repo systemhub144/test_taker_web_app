@@ -8,14 +8,14 @@ def menu_keyboard() -> ReplyKeyboardMarkup:
             KeyboardButton(text='✅Javobni tekshirish')
         ],
         [
-            KeyboardButton(text='🤖xizmatlar'),
-            KeyboardButton(text='ℹ️Bot haqida ma\'lumot')
+            KeyboardButton(text='🤖Xizmatlar'),
+            KeyboardButton(text='ℹ️Bot haqida ma\'lumotlar')
         ],
         [
-            KeyboardButton(text='📊 Natijalarim'),
-            KeyboardButton(text='🔍 Test tahlili')
+            KeyboardButton(text='📊Natijalarim'),
+            KeyboardButton(text='🔍Test tahlili')
         ],
-        [KeyboardButton(text='🎬 Video instruksiyalar')]
+        [KeyboardButton(text='🎬Video qo\'llanma')]
     ]
     return ReplyKeyboardMarkup(
         keyboard=keyboard,
