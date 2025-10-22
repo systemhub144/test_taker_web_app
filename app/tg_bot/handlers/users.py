@@ -68,7 +68,7 @@ async def get_all_results_handler(message: Message) -> None:
     results = await get_all_results(user_id=message.from_user.id, async_session_maker=message.bot.async_session_maker)
 
     if not results.items():
-        await message.message.reply('Siz hali test yechmagansiz')
+        await message.reply('Siz hali test yechmagansiz')
         return
 
     text_parts = ['Test natijalari:\n']
