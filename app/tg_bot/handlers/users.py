@@ -38,32 +38,58 @@ async def start_handler(message: Message) -> None:
 @user_router.message(F.text == '➕Test yaratish', ChannelSubscriptionFilter())
 async def create_test_handler(message: Message) -> None:
     await message.bot.send_message(chat_id=message.from_user.id,
-                                    text='yoriqnoma http://silka.com',
+                                    text='yoriqnoma https://telegra.ph/Test-yaratish-boyicha-yoriqnoma-10-22',
                                     reply_markup=get_test_create_url(message.bot.config.BASE_URL, message.from_user.id))
 
 
 @user_router.message(F.text == '✅Javobni tekshirish', ChannelSubscriptionFilter())
 async def pass_test_handler(message: Message) -> None:
     await message.bot.send_message(chat_id=message.from_user.id,
-                                    text='yoriqnoma http://silka.com',
+                                    text='yoriqnoma https://telegra.ph/Test-topshirish-boyicha-yoriqnoma-10-22',
                                     reply_markup=get_test_pass_url(message.bot.config.BASE_URL, message.from_user.id))
 
 
 @user_router.message(F.text == '🤖Xizmatlar', ChannelSubscriptionFilter())
 async def get_services_handler(message: Message) -> None:
     await message.bot.send_message(chat_id=message.from_user.id,
-                                    text='🤝 Bizning xizmatlarimiz.\n\n'
-                                         '1️⃣  Test o\'tkazish.\n'
-                                         '(Botimiz orqali test o\'tkazish mutlaqo bepul. Shu jumladan blok test ham!)')
+                                    text='🤖 Xizmatlar — Jahongir Academy Bot\n'
+                                         'Salom! @JahongirAcademyBot sizga quyidagi xizmatlarni taklif etadi 👇\n\n'
+                                         '💡 1. Test yaratish va o‘tkazish\n'
+                                         'O‘zingizning testlaringizni yarating 📝, savollar qo‘shing va boshqalar bilan '
+                                         'ulashing.\n'
+                                         '🎯 Ideal yechim o‘qituvchilar, kurs egalari va mentorlar uchun!\n\n'
+                                         '🧠 2. Test topshirish\n'
+                                         'Tayyor testlarni ishlang, natijalaringizni darhol bilib oling 📊\n'
+                                         '🔍 Bilimingizni sinab ko‘ring va o‘zingizni rivojlantiring!\n\n'
+                                         '📲 Boshlash uchun:\n'
+                                         '👉 @JahongirAcademyBot ni oching va kerakli xizmatni tanlang!')
 
 
 @user_router.message(F.text == 'ℹ️Bot haqida ma\'lumotlar', ChannelSubscriptionFilter())
 async def get_bot_info_handler(message: Message) -> None:
     await message.bot.send_message(chat_id=message.from_user.id,
-                                   text='Bot haqida ma\'lumot.\n\n')
+                                   text='ℹ️ Bot haqida ma’lumotlar\n\n'
+                                        'Salom! 👋\n'
+                                        '@JahongirAcademyBot — bu ta’lim sohasidagi yordamchi bot, sizga testlar '
+                                        'yaratish va topshirish jarayonini oson va qulay tarzda tashkil etishda yordam '
+                                        'beradi 🎓\n\n'
+                                        '💼 Bot nimalarni qila oladi?\n'
+                                        '1️⃣ Test yaratadi va o‘tkazadi — Siz o‘zingizning testlaringizni tuzishingiz, '
+                                        'savollarni qo‘shishingiz va natijalarni kuzatishingiz mumkin.\n'
+                                        '2️⃣ Test topshirish imkonini beradi — Foydalanuvchilar tayyor testlarni bajarib,'
+                                        ' o‘z natijalarini darhol ko‘rishadi.\n'
+                                        '3️⃣ Natijalarni tahlil qiladi — Test yakunida siz to‘g‘ri va noto‘g‘ri '
+                                        'javoblaringizni ko‘rib chiqishingiz mumkin 📊\n\n'
+                                        '🎯 Nima uchun kerak?\n'
+                                        'Bu bot — o‘qituvchilar, o‘quv markazlari, talabalar va mustaqil o‘rganuvchilar '
+                                        'uchun ajoyib yordamchi.\n'
+                                        'U ta’lim jarayonini raqamlashtirish, tezkor natijalar olish va bilim darajasini '
+                                        'oshirish imkonini beradi 🚀\n\n'
+                                        '📲 Boshlash uchun:\n'
+                                        '@JahongirAcademyBot ni oching va menyudan kerakli bo‘limni tanlang 🤖')
 
 
-@user_router.message(F.text == "📊 Natijalarim")
+@user_router.message(F.text == "📊Natijalarim", ChannelSubscriptionFilter())
 async def get_all_results_handler(message: Message) -> None:
     results = await get_all_results(user_id=message.from_user.id, async_session_maker=message.bot.async_session_maker)
 
@@ -88,7 +114,7 @@ async def get_all_results_handler(message: Message) -> None:
     )
 
 
-@user_router.message(F.text == '🔍 Test tahlili')
+@user_router.message(F.text == '🔍Test tahlili', ChannelSubscriptionFilter())
 async def get_all_test(message: Message) -> None:
     attempts = (await get_all_test_attempts(user_id=message.from_user.id,
                                             async_session_maker=message.bot.async_session_maker))
