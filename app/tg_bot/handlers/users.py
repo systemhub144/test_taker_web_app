@@ -38,14 +38,14 @@ async def start_handler(message: Message) -> None:
 @user_router.message(F.text == '➕Test yaratish', ChannelSubscriptionFilter())
 async def create_test_handler(message: Message) -> None:
     await message.bot.send_message(chat_id=message.from_user.id,
-                                    text='yoriqnoma https://telegra.ph/Test-yaratish-boyicha-yoriqnoma-10-22',
+                                    text='Yoʻriqnoma https://telegra.ph/Test-yaratish-boyicha-yoriqnoma-10-22',
                                     reply_markup=get_test_create_url(message.bot.config.BASE_URL, message.from_user.id))
 
 
 @user_router.message(F.text == '✅Javobni tekshirish', ChannelSubscriptionFilter())
 async def pass_test_handler(message: Message) -> None:
     await message.bot.send_message(chat_id=message.from_user.id,
-                                    text='yoriqnoma https://telegra.ph/Test-topshirish-boyicha-yoriqnoma-10-22',
+                                    text='Yoʻriqnoma https://telegra.ph/Test-topshirish-boyicha-yoriqnoma-10-22',
                                     reply_markup=get_test_pass_url(message.bot.config.BASE_URL, message.from_user.id))
 
 
