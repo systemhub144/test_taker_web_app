@@ -1,4 +1,4 @@
-from aiogram import Router, F
+from aiogram import Router, F, Bot
 from aiogram.types import Message, CallbackQuery
 from aiogram.filters import CommandStart
 
@@ -18,7 +18,7 @@ user_router = Router()
 
 @user_router.callback_query(F.data == 'channels_check')
 async def check_channels_subscription(callback: CallbackQuery) -> None:
-    if await ChannelSubscriptionFilter().__call__(callback.message, callback.bot):
+    if await ChannelSubscriptionFilter().__call__(callback.message, callback.bot, user_id=callback.from_user.id):
         await callback.message.answer(text=f'Assalomu alaykum! 👋 <b>{callback.from_user.full_name}</b>\n'
                                            f'📋 Test ishlash uchun pastdagi tugmani bosing:',
                                       reply_markup=menu_keyboard())
