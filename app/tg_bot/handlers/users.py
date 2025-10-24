@@ -22,6 +22,7 @@ async def check_channels_subscription(callback: CallbackQuery) -> None:
         await callback.message.answer(text=f'Assalomu alaykum! 👋 <b>{callback.from_user.full_name}</b>\n'
                                            f'📋 Test ishlash uchun pastdagi tugmani bosing:',
                                       reply_markup=menu_keyboard())
+        return
 
     await callback.bot.send_message(chat_id=callback.from_user.id,
                                     text='Botdan foydalanish uchun quyidagi kanallarga a\'zo bo\'ling.',
