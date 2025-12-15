@@ -22,7 +22,6 @@ class Settings:
     BASE_URL: str
     ADMIN_ID: int
 
-    CERTIFICATE_ID: list[str]
     VIDEO_ID: list[str]
     CHANNELS_ID: list[str]
 
@@ -55,7 +54,6 @@ def load_config(path: Path) -> Settings:
         BOT_TOKEN=env.str('BOT_TOKEN'),
         BASE_URL=env.str('BASE_URL'),
         ADMIN_ID=env.str('ADMIN_ID'),
-        CERTIFICATE_ID=env.list('CERTIFICATE_ID'),
         VIDEO_ID=env.list('VIDEO_ID'),
         CHANNELS_ID=env.list('CHANNELS_ID'),
     )

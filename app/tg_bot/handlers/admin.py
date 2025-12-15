@@ -1,7 +1,14 @@
+import copy
+from io import BytesIO
+
 from aiogram import Router, F, Bot
-from aiogram.types import Message, CallbackQuery
+from aiogram.types import Message, CallbackQuery, FSInputFile, BufferedInputFile
 from redis import Redis
+from reportlab.pdfbase import pdfmetrics
 from sqlalchemy.ext.asyncio import AsyncSession
+
+from reportlab.pdfgen import canvas
+from PyPDF2 import PdfReader, PdfWriter
 
 
 from app.models.dao import (stop_testing,
@@ -9,8 +16,41 @@ from app.models.dao import (stop_testing,
                             get_user_data,
                             get_test_info, get_test_answers,
                             add_new_admin)
+from app.config import PATH
 
 admin_router = Router()
+
+async def prepare_certificate(certificate, full_name: str) -> BufferedInputFile:
+    # 1. Создаём PDF слой с именем в памяти
+    overlay = BytesIO()
+    c = canvas.Canvas(overlay, pagesize=(595, 842))
+
+    font_name = "Helvetica-Bold"
+    font_size = 28
+    y = 410
+
+    text_width = pdfmetrics.stringWidth(full_name, font_name, font_size)
+    x = (549 - text_width) / 2  # центрирование
+
+    c.setFont(font_name, font_size)
+    c.drawString(x, y, full_name)
+    c.save()
+
+    overlay.seek(0)
+
+    # 2. Объединяем с шаблоном
+    overlay_pdf = PdfReader(overlay)
+    writer = PdfWriter()
+
+    page = copy.copy(certificate)
+    page.merge_page(overlay_pdf.pages[0])
+    writer.add_page(page)
+
+    # 3. Возвращаем результат как bytes
+    result = BytesIO()
+    writer.write(result)
+
+    return BufferedInputFile(result.getvalue(), filename='certificate.pdf')
 
 
 async def test_results_message_parts(test_id: int, session: AsyncSession, redis: Redis, bot: Bot, is_ending: bool) -> list:
@@ -22,6 +62,13 @@ async def test_results_message_parts(test_id: int, session: AsyncSession, redis:
     message_parts = ['Test natijalari:\n\n'
                      f'Test nomi: {test_info["test_name"]}\n'
                      f'Test kodi: {test_id}\n\n']
+
+    certificate_list = [
+        PdfReader(open(PATH / 'app/tg_bot/certificates/0.pdf', 'rb')).pages[0],
+        PdfReader(open(PATH / 'app/tg_bot/certificates/1.pdf', 'rb')).pages[0],
+        PdfReader(open(PATH / 'app/tg_bot/certificates/2.pdf', 'rb')).pages[0],
+        PdfReader(open(PATH / 'app/tg_bot/certificates/3.pdf', 'rb')).pages[0],
+    ]
 
     medals = ['🥇', '🥈', '🥉']
     for i, attempt in enumerate(results):
@@ -36,8 +83,12 @@ async def test_results_message_parts(test_id: int, session: AsyncSession, redis:
                      f'Test nomi: {test_info["test_name"]}\n'
                      f'Ball: {attempt.score}\n'
                      f'O\'rningiz: {i + 1}')
-            await bot.send_document(chat_id=attempt.tg_user_id, document=bot.config.CERTIFICATE_ID[i]) if i <= 2 \
-                else await bot.send_document(chat_id=attempt.tg_user_id, document=bot.config.CERTIFICATE_ID[3])
+            if i <= 2:
+                file = await prepare_certificate(certificate_list[i], full_name)
+            else:
+                file = await prepare_certificate(certificate_list[3], full_name)
+            await bot.send_document(chat_id=attempt.tg_user_id, document=file)
+
 
         message_parts.append(f'{full_name} - {attempt.score} ta {medal}')
 
