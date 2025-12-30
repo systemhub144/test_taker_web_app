@@ -5,6 +5,7 @@ from aiogram import Router, F, Bot
 from aiogram.types import Message, CallbackQuery, FSInputFile, BufferedInputFile
 from redis import Redis
 from reportlab.pdfbase import pdfmetrics
+from reportlab.pdfbase.ttfonts import TTFont
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from reportlab.pdfgen import canvas
@@ -21,16 +22,15 @@ from app.config import PATH
 admin_router = Router()
 
 async def prepare_certificate(certificate, full_name: str) -> BufferedInputFile:
-    # 1. Создаём PDF слой с именем в памяти
     overlay = BytesIO()
     c = canvas.Canvas(overlay, pagesize=(595, 842))
 
-    font_name = "Helvetica-Bold"
+    font_name = "DejaVuSans-Bold"
     font_size = 28
     y = 410
 
     text_width = pdfmetrics.stringWidth(full_name, font_name, font_size)
-    x = (549 - text_width) / 2  # центрирование
+    x = (549 - text_width) / 2
 
     c.setFont(font_name, font_size)
     c.drawString(x, y, full_name)
@@ -38,7 +38,6 @@ async def prepare_certificate(certificate, full_name: str) -> BufferedInputFile:
 
     overlay.seek(0)
 
-    # 2. Объединяем с шаблоном
     overlay_pdf = PdfReader(overlay)
     writer = PdfWriter()
 
@@ -46,7 +45,6 @@ async def prepare_certificate(certificate, full_name: str) -> BufferedInputFile:
     page.merge_page(overlay_pdf.pages[0])
     writer.add_page(page)
 
-    # 3. Возвращаем результат как bytes
     result = BytesIO()
     writer.write(result)
 
@@ -62,6 +60,9 @@ async def test_results_message_parts(test_id: int, session: AsyncSession, redis:
     message_parts = ['Test natijalari:\n\n'
                      f'Test nomi: {test_info["test_name"]}\n'
                      f'Test kodi: {test_id}\n\n']
+
+    font_path = PATH / 'app/tg_bot/certificates/DejaVuSans-Bold.ttf'
+    pdfmetrics.registerFont(TTFont('DejaVuSans-Bold', font_path))
 
     certificate_list = [
         PdfReader(open(PATH / 'app/tg_bot/certificates/0.pdf', 'rb')).pages[0],
