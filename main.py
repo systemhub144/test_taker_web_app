@@ -118,17 +118,18 @@ async def submit_test(user_answers: SubmitTest):
     user_answers.completed_at = datetime.datetime.strptime(user_answers.completed_at,
                                                            '%Y-%m-%dT%H:%M:%S.%fZ').replace(tzinfo=datetime.timezone.utc)
     user_results = await pass_test(user_test_data=user_answers, async_session_maker=app.async_session_maker)
-
-    message = (f'Sizning natijangiz👇\n\n'
-               f'Ism: {user_results["username"]}\n'
+    competed_time = datetime.datetime.now(ZoneInfo("Etc/GMT-5"))
+    message = (f'Ism: {user_results["username"]}\n'
                f'Familiya: {user_results["lastname"]}\n'
                f'Viloyat: {user_results["city"]}\n'
                f'User ID: {user_results["user_id"]}\n'
                f'To\'g\'ri javoblar: {user_results["correct_answers"]}✅\n'
                f'Noto\'g\'ri javoblar: {user_results["wrong_answers"]}❌\n'
-               f'Ball: {user_results["score"]}\n')
+               f'Ball: {user_results["score"]}\n'
+               f'Tugatkan vaqti: {competed_time.strftime("%Y-%m-%d %H:%M")}')
 
-    await bot.send_message(text=message, chat_id=user_results['user_id'])
+    await bot.send_message(text=f'Sizning natijangiz👇\n\n{message}', chat_id=user_results['user_id'])
+    await bot.send_message(text=message, chat_id=app.config.ADMIN_ID)
 
 
 @app.post("/webhook")

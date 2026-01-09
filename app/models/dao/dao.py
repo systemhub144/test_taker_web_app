@@ -1,8 +1,8 @@
 import datetime
-from typing import Sequence, Any, Coroutine
+from typing import Sequence
 
 from sqlalchemy.ext.asyncio import AsyncSession
-from sqlalchemy import select, Row, RowMapping
+from sqlalchemy import select, desc
 
 from app.models.dao.base import BaseDAO
 from app.models.models import Test, User, TestAttempt, Answer, UserAnswer, TestCreator
@@ -72,7 +72,7 @@ class TestDAO(BaseDAO):
 
     @classmethod
     async def get_all_results(cls, session: AsyncSession, test_id: int) -> Sequence[TestAttempt]:
-        stmt = select(TestAttempt).where(TestAttempt.test_id == test_id).order_by(TestAttempt.score)
+        stmt = select(TestAttempt).where(TestAttempt.test_id == test_id).order_by(desc(TestAttempt.score)).order_by(TestAttempt.created_at)
         result = (await session.execute(stmt)).scalars().all()
         return result
 
