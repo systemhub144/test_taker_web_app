@@ -3,6 +3,7 @@ from contextlib import asynccontextmanager
 from zoneinfo import ZoneInfo
 
 from aiogram.types import Update
+from aiogram.exceptions import TelegramForbiddenError, TelegramBadRequest
 from fastapi import FastAPI, Request
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.templating import Jinja2Templates
@@ -128,8 +129,13 @@ async def submit_test(user_answers: SubmitTest):
                f'Ball: {user_results["score"]}\n'
                f'Tugatkan vaqti: {competed_time.strftime("%Y-%m-%d %H:%M")}')
 
-    await bot.send_message(text=f'Sizning natijangiz👇\n\n{message}', chat_id=user_results['user_id'])
-    await bot.send_message(text=message, chat_id=app.config.ADMIN_ID)
+    try:
+        await bot.send_message(text=f'Sizning natijangiz👇\n\n{message}', chat_id=user_results['user_id'])
+        await bot.send_message(text=message, chat_id=app.config.ADMIN_ID)
+    except TelegramForbiddenError:
+        pass
+    except TelegramBadRequest:
+        pass
 
 
 @app.post("/webhook")
@@ -185,15 +191,20 @@ async def create_test(test_data: CreateTest):
 
     test_id = await add_full_test(test_data=test_data, async_session_maker=app.async_session_maker)
 
-    await bot.send_message(chat_id=test_data.user_id, text=f'Test yaratildi!\n\n'
-                                                           f'Test nomi: {test_data.test_name}\n'
-                                                           f'Test kodi: {test_id}\n'
-                                                           f'Ajratilgan vaqt: {test_data.test_time}\n'
-                                                           f'Ishlash vaqti: {test_data.start_time} dan\n '
-                                                           f'{test_data.end_time} gacha\n\n'
-                                                           f'Javoblarni yuborish uchun bot: @JahongirAcademyBot\n\n'
-                                                           f'Eslatma: Javoblarni faqat @JahongirAcademyBot ga yuboring!',
-                           reply_markup=test_controls_keyboard(test_id))
+    try:
+        await bot.send_message(chat_id=test_data.user_id, text=f'Test yaratildi!\n\n'
+                                                               f'Test nomi: {test_data.test_name}\n'
+                                                               f'Test kodi: {test_id}\n'
+                                                               f'Ajratilgan vaqt: {test_data.test_time}\n'
+                                                               f'Ishlash vaqti: {test_data.start_time} dan\n '
+                                                               f'{test_data.end_time} gacha\n\n'
+                                                               f'Javoblarni yuborish uchun bot: @JahongirAcademyBot\n\n'
+                                                               f'Eslatma: Javoblarni faqat @JahongirAcademyBot ga yuboring!',
+                               reply_markup=test_controls_keyboard(test_id))
+    except TelegramForbiddenError:
+        pass
+    except TelegramBadRequest:
+        pass
 
     return {
         'created': True,

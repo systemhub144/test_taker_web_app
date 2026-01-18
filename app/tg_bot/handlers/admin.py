@@ -2,6 +2,7 @@ import copy
 from io import BytesIO
 
 from aiogram import Router, F, Bot
+from aiogram.exceptions import TelegramForbiddenError, TelegramBadRequest
 from aiogram.types import CallbackQuery, BufferedInputFile
 from redis import Redis
 from reportlab.pdfbase import pdfmetrics
@@ -51,7 +52,7 @@ async def prepare_certificate(certificate, full_name: str) -> BufferedInputFile:
     return BufferedInputFile(result.getvalue(), filename='certificate.pdf')
 
 
-async def test_results_message_parts(test_id: int, session: AsyncSession, redis: Redis, bot: Bot, is_ending: bool) -> list:
+async def test_results_message_parts(test_id: int, session: AsyncSession, redis: Redis) -> list:
     results = (await get_all_users_results(test_id,
                                            async_session_maker=session))
     test_info = await get_test_info(test_id, async_session_maker=session, redis=redis)
@@ -95,17 +96,29 @@ async def send_certificates(test_id, bot: Bot, session: AsyncSession, redis: Red
     for i, attempt in enumerate(results):
         user_data = await get_user_data(user_id=attempt.user_id, async_session_maker=session)
         full_name = f'{user_data.lastname} {user_data.username}'
-        await bot.send_message(chat_id=attempt.tg_user_id,
-                               text=f'Testda qatnashganingiz uchun rahmat,\n'
-                                    f'Natijalar:\n'
-                                    f'Test nomi: {test_info["test_name"]}\n'
-                                    f'Ball: {attempt.score}\n'
-                                    f'O\'rningiz: {i + 1}')
+        try:
+            await bot.send_message(chat_id=attempt.tg_user_id,
+                                   text=f'Testda qatnashganingiz uchun rahmat,\n'
+                                        f'Natijalar:\n'
+                                        f'Test nomi: {test_info["test_name"]}\n'
+                                        f'Ball: {attempt.score}\n'
+                                        f'O\'rningiz: {i + 1}')
+        except TelegramForbiddenError:
+            pass
+        except TelegramBadRequest:
+            pass
+
         if i <= 2:
             file = await prepare_certificate(certificate_list[i], full_name)
         else:
             file = await prepare_certificate(certificate_list[3], full_name)
-        await bot.send_document(chat_id=attempt.tg_user_id, document=file)
+
+        try:
+            await bot.send_document(chat_id=attempt.tg_user_id, document=file)
+        except TelegramForbiddenError:
+            pass
+        except TelegramBadRequest:
+            pass
 
 
 @admin_router.callback_query(F.data.split('::')[0] == 'stop_test')
@@ -113,15 +126,24 @@ async def stop_test(callback: CallbackQuery) -> None:
     await stop_testing(test_id=callback.data.split('::')[-1],
                     async_session_maker=callback.bot.async_session_maker,
                     redis=callback.bot.redis)
-    await callback.message.reply('Test yakunlandi!')
+    try:
+        await callback.message.reply('Test yakunlandi!')
+    except TelegramForbiddenError:
+        pass
+    except TelegramBadRequest:
+        pass
+
     test_id = int(callback.data.split('::')[-1])
     message_parts = await test_results_message_parts(test_id=test_id,
                                                      session=callback.bot.async_session_maker,
-                                                     redis=callback.bot.redis,
-                                                     bot=callback.bot,
-                                                     is_ending=True)
+                                                     redis=callback.bot.redis,)
 
-    await callback.message.reply(text='\n'.join(message_parts))
+    try:
+        await callback.message.reply(text='\n'.join(message_parts))
+    except TelegramForbiddenError:
+        pass
+    except TelegramBadRequest:
+        pass
     await send_certificates(test_id=test_id,
                             session=callback.bot.async_session_maker,
                             redis=callback.bot.redis,
@@ -137,7 +159,12 @@ async def get_results_test(callback: CallbackQuery) -> None:
                                                      bot=callback.bot,
                                                      is_ending=False)
 
-    await callback.message.reply(text='\n'.join(message_parts))
+    try:
+        await callback.message.reply(text='\n'.join(message_parts))
+    except TelegramForbiddenError:
+        pass
+    except TelegramBadRequest:
+        pass
 
 
 @admin_router.callback_query(F.data.split('::')[0] == 'allow_admin')
@@ -145,6 +172,12 @@ async def allow_admin(callback: CallbackQuery) -> None:
     user_id = int(callback.data.split('::')[-1])
 
     await add_new_admin(user_id=user_id, async_session_maker=callback.bot.async_session_maker)
-    await callback.bot.send_message(chat_id=callback.bot.config.ADMIN_ID,
-                                    text=f'Siz {user_id} id bilan odamga test yaratishga ruhsat berdingiz')
-    await callback.bot.send_message(chat_id=user_id, text='Sizga test yaratishga ruhsat berildi')
+
+    try:
+        await callback.bot.send_message(chat_id=callback.bot.config.ADMIN_ID,
+                                        text=f'Siz {user_id} id bilan odamga test yaratishga ruhsat berdingiz')
+        await callback.bot.send_message(chat_id=user_id, text='Sizga test yaratishga ruhsat berildi')
+    except TelegramForbiddenError:
+        pass
+    except TelegramBadRequest:
+        pass
