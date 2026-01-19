@@ -155,9 +155,7 @@ async def get_results_test(callback: CallbackQuery) -> None:
     test_id = int(callback.data.split('::')[-1])
     message_parts = await test_results_message_parts(test_id=test_id,
                                                      session=callback.bot.async_session_maker,
-                                                     redis=callback.bot.redis,
-                                                     bot=callback.bot,
-                                                     is_ending=False)
+                                                     redis=callback.bot.redis)
 
     try:
         await callback.message.reply(text='\n'.join(message_parts))
