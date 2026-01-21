@@ -111,7 +111,6 @@ async def check_test(test_id: int, user_id: int):
 
     return test
 
-
 @app.post('/api/submit-test')
 async def submit_test(user_answers: SubmitTest):
     user_answers.started_at = datetime.datetime.strptime(user_answers.started_at,
@@ -119,6 +118,7 @@ async def submit_test(user_answers: SubmitTest):
     user_answers.completed_at = datetime.datetime.strptime(user_answers.completed_at,
                                                            '%Y-%m-%dT%H:%M:%S.%fZ').replace(tzinfo=datetime.timezone.utc)
     user_results = await pass_test(user_test_data=user_answers, async_session_maker=app.async_session_maker)
+    test_info = await get_test_info(test_id=user_answers.test_id, async_session_maker=app.async_session_maker)
     competed_time = datetime.datetime.now(ZoneInfo("Etc/GMT-5"))
     message = (f'Ism: {user_results["username"]}\n'
                f'Familiya: {user_results["lastname"]}\n'
@@ -129,9 +129,10 @@ async def submit_test(user_answers: SubmitTest):
                f'Ball: {user_results["score"]}\n'
                f'Tugatkan vaqti: {competed_time.strftime("%Y-%m-%d %H:%M")}')
 
+
     try:
         await bot.send_message(text=f'Sizning natijangiz👇\n\n{message}', chat_id=user_results['user_id'])
-        await bot.send_message(text=message, chat_id=app.config.ADMIN_ID)
+        await bot.send_message(text=message, chat_id=test_info['admin_id'])
     except TelegramForbiddenError:
         pass
     except TelegramBadRequest:
@@ -165,20 +166,20 @@ async def create_test(test_data: CreateTest):
             'error': 'User ID talab qilinadi'
         }
 
-    if not await check_admin(user_id=test_data.user_id, async_session_maker=app.async_session_maker):
-        user_info = await bot.get_chat(chat_id=test_data.user_id)
-        await bot.send_message(chat_id=app.config.ADMIN_ID,
-                               text=f'{user_info.full_name} sizdan test yaratish uchun \n'
-                                    f'ruhsat so\'ralmoqda\n',
-                               reply_markup=allow_admin_keyboard(test_data.user_id)
-                               )
-        await bot.send_message(chat_id=test_data.user_id,
-                               text='Siz test yarata olmaysiz, lekin sizning so\'rovingiz adminga jo\'natildi')
-
-        return {
-            'created': False,
-            'error': 'Siz test yarata olmaysiz, lekin sizning so\'rovingiz adminga jo\'natildi'
-        }
+    # if not await check_admin(user_id=test_data.user_id, async_session_maker=app.async_session_maker):
+    #     user_info = await bot.get_chat(chat_id=test_data.user_id)
+    #     await bot.send_message(chat_id=app.config.ADMIN_ID,
+    #                            text=f'{user_info.full_name} sizdan test yaratish uchun \n'
+    #                                 f'ruhsat so\'ralmoqda\n',
+    #                            reply_markup=allow_admin_keyboard(test_data.user_id)
+    #                            )
+    #     await bot.send_message(chat_id=test_data.user_id,
+    #                            text='Siz test yarata olmaysiz, lekin sizning so\'rovingiz adminga jo\'natildi')
+    #
+    #     return {
+    #         'created': False,
+    #         'error': 'Siz test yarata olmaysiz, lekin sizning so\'rovingiz adminga jo\'natildi'
+    #     }
 
     try:
         test_data.start_time = datetime.datetime.strptime(test_data.start_time, '%Y-%m-%d %H:%M:%S.%f')
