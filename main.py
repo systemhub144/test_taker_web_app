@@ -121,7 +121,7 @@ async def submit_test(user_answers: SubmitTest):
 
     if user_and_test_info['allowed']:
         user_results = await pass_test(user_test_data=user_answers, async_session_maker=app.async_session_maker)
-        test_info = await get_test_info(test_id=user_answers.test_id, async_session_maker=app.async_session_maker)
+        test_info = await get_test_info(test_id=user_answers.test_id, async_session_maker=app.async_session_maker, redis=app.redis)
         completed_time = datetime.datetime.now(ZoneInfo("Etc/GMT-5"))
         message = (f'Ism: {user_results["username"]}\n'
                    f'Familiya: {user_results["lastname"]}\n'
@@ -144,7 +144,7 @@ async def submit_test(user_answers: SubmitTest):
         message = user_and_test_info['error']
 
         try:
-            await bot.send_message(text=f'Sizning natijangiz👇\n\n{message}', chat_id=user_answers.user_id)
+            await bot.send_message(text=message, chat_id=user_answers.user_id)
         except TelegramForbiddenError:
             pass
         except TelegramBadRequest:
