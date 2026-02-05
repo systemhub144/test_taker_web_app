@@ -65,7 +65,6 @@ app.add_middleware(
 async def root(request: Request):
     return app.templates.TemplateResponse(name='pass_test.html', context={'request': request})
 
-
 @app.get("/api/check-test")
 async def check_test(test_id: int, user_id: int):
     test = await get_test_info(test_id, async_session_maker=app.async_session_maker, redis=app.redis)
@@ -117,26 +116,40 @@ async def submit_test(user_answers: SubmitTest):
                                                          '%Y-%m-%dT%H:%M:%S.%fZ').replace(tzinfo=datetime.timezone.utc)
     user_answers.completed_at = datetime.datetime.strptime(user_answers.completed_at,
                                                            '%Y-%m-%dT%H:%M:%S.%fZ').replace(tzinfo=datetime.timezone.utc)
-    user_results = await pass_test(user_test_data=user_answers, async_session_maker=app.async_session_maker)
-    test_info = await get_test_info(test_id=user_answers.test_id, async_session_maker=app.async_session_maker)
-    competed_time = datetime.datetime.now(ZoneInfo("Etc/GMT-5"))
-    message = (f'Ism: {user_results["username"]}\n'
-               f'Familiya: {user_results["lastname"]}\n'
-               f'Viloyat: {user_results["city"]}\n'
-               f'User ID: {user_results["user_id"]}\n'
-               f'To\'g\'ri javoblar: {user_results["correct_answers"]}✅\n'
-               f'Noto\'g\'ri javoblar: {user_results["wrong_answers"]}❌\n'
-               f'Ball: {user_results["score"]}\n'
-               f'Tugatkan vaqti: {competed_time.strftime("%Y-%m-%d %H:%M")}')
+
+    user_and_test_info = await check_test(test_id=user_answers.test_id, user_id=user_answers.user_id)
+
+    if user_and_test_info['allowed']:
+        user_results = await pass_test(user_test_data=user_answers, async_session_maker=app.async_session_maker)
+        test_info = await get_test_info(test_id=user_answers.test_id, async_session_maker=app.async_session_maker)
+        completed_time = datetime.datetime.now(ZoneInfo("Etc/GMT-5"))
+        message = (f'Ism: {user_results["username"]}\n'
+                   f'Familiya: {user_results["lastname"]}\n'
+                   f'Viloyat: {user_results["city"]}\n'
+                   f'User ID: {user_results["user_id"]}\n'
+                   f'To\'g\'ri javoblar: {user_results["correct_answers"]}✅\n'
+                   f'Noto\'g\'ri javoblar: {user_results["wrong_answers"]}❌\n'
+                   f'Ball: {user_results["score"]}\n'
+                   f'Tugatkan vaqti: {completed_time.strftime("%Y-%m-%d %H:%M")}')
 
 
-    try:
-        await bot.send_message(text=f'Sizning natijangiz👇\n\n{message}', chat_id=user_results['user_id'])
-        await bot.send_message(text=message, chat_id=test_info['admin_id'])
-    except TelegramForbiddenError:
-        pass
-    except TelegramBadRequest:
-        pass
+        try:
+            await bot.send_message(text=f'Sizning natijangiz👇\n\n{message}', chat_id=user_results['user_id'])
+            await bot.send_message(text=message, chat_id=test_info['admin_id'])
+        except TelegramForbiddenError:
+            pass
+        except TelegramBadRequest:
+            pass
+    else:
+        message = user_and_test_info['error']
+
+        try:
+            await bot.send_message(text=f'Sizning natijangiz👇\n\n{message}', chat_id=user_answers.user_id)
+        except TelegramForbiddenError:
+            pass
+        except TelegramBadRequest:
+            pass
+
 
 
 @app.post("/webhook")
